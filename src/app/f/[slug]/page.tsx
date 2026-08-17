@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { Header } from "@/components/common/Header";
 import { FormFiller } from "@/components/fill/FormFiller";
+import { QuizFiller } from "@/components/quiz/QuizFiller";
 import { getSession } from "@/lib/tpass-auth";
 import { getPublicForm } from "@/lib/forms";
 import { isAdmin } from "@/config/admin";
 import { authConfig, loginUrlFor } from "@/config/auth";
+import { hasQuizSkin } from "@/lib/quiz/skins";
 import { IDENTITY_FIELD_LABELS } from "@/lib/survey-schema";
 
 function Shell({ children, isLoggedIn, admin }: { children: React.ReactNode; isLoggedIn: boolean; admin: boolean }) {
@@ -87,6 +89,22 @@ export default async function FillPage({
     : identityFields.length > 0
       ? `此問卷將記錄你的：${identityFields.map((f) => IDENTITY_FIELD_LABELS[f]).join("、")}`
       : null;
+
+  // 少數問卷有客製特效皮（題目文字仍讀 DB，特效讀 code）；其餘一律走通用填寫器。
+  if (hasQuizSkin(slug)) {
+    return (
+      <Shell isLoggedIn admin={admin}>
+        <QuizFiller
+          slug={slug}
+          title={form.title}
+          description={form.description}
+          definition={form.definition}
+          tone={form.settings.theme.tone}
+          identityNotice={identityNotice}
+        />
+      </Shell>
+    );
+  }
 
   return (
     <Shell isLoggedIn admin={admin}>

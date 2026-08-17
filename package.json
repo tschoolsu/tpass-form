@@ -20,7 +20,8 @@
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev"
+    "db:migrate": "prisma migrate dev",
+    "db:seed:quiz": "pnpm dlx tsx scripts/seed-freshman-quiz.ts"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"

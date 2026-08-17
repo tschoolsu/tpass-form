@@ -33,6 +33,261 @@
   --color-tone-rose-bg:      oklch(0.96 0.04  15);
   --color-tone-rose-badge:   oklch(0.89 0.09  15);
   --color-tone-rose-text:    oklch(0.5  0.17  18);
+
+  /* ── 客製特效問卷（/f/zhishu）專用動畫 ──────────────────────────────
+     只有 src/components/quiz/* 與 src/lib/quiz/effects.ts 會用到；
+     duration / delay 常被 inline style 覆蓋（同名 longhand 勝過 shorthand）。 */
+
+  /* 粒子（Burst） */
+  --animate-quiz-particle-out: quiz-particle-out 900ms ease-out forwards;
+  --animate-quiz-particle-in:  quiz-particle-in  900ms ease-in  forwards;
+
+  /* 選項按鈕：一次性 */
+  --animate-quiz-bounce:   quiz-bounce   520ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-quiz-shake:    quiz-shake    460ms ease-in-out;
+  --animate-quiz-nudge:    quiz-nudge    420ms ease-out;
+  --animate-quiz-bloom:    quiz-bloom    720ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-quiz-openup:   quiz-openup   620ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-quiz-dashout:  quiz-dashout  900ms cubic-bezier(0.65, 0, 0.35, 1);
+  --animate-quiz-liedown:  quiz-liedown  1200ms ease-in-out;
+  --animate-quiz-jitter:   quiz-jitter   520ms linear;
+  --animate-quiz-strobe:   quiz-strobe   620ms steps(1, end) 3;
+  --animate-quiz-solemn:   quiz-solemn   1400ms ease-out;
+  --animate-quiz-vanish:   quiz-vanish   1200ms ease-in-out;
+  --animate-quiz-shrink:   quiz-shrink   900ms ease-in-out;
+  --animate-quiz-crack:    quiz-crack    620ms ease-in-out;
+  --animate-quiz-tick:     quiz-tick     1000ms steps(1, end) 2;
+  /* 停在最後一格：選中後就一直結著霜 */
+  --animate-quiz-frost:    quiz-frost    800ms ease-out forwards;
+
+  /* 選項按鈕：選中期間持續 */
+  --animate-quiz-breathe:  quiz-breathe  2400ms ease-in-out infinite;
+  --animate-quiz-sway:     quiz-sway     2200ms ease-in-out infinite;
+  --animate-quiz-halo:     quiz-halo     2000ms ease-in-out infinite;
+  --animate-quiz-sunglow:  quiz-sunglow  2000ms ease-in-out infinite;
+  --animate-quiz-stink:    quiz-stink    1800ms ease-in-out infinite;
+  --animate-quiz-dance:    quiz-dance    900ms  ease-in-out infinite;
+  --animate-quiz-marquee:  quiz-marquee  1200ms linear infinite;
+
+  /* 全屏 scene */
+  --animate-quiz-fall:      quiz-fall      4000ms linear forwards;
+  --animate-quiz-raindrop:  quiz-raindrop  900ms  linear infinite;
+  --animate-quiz-pop:       quiz-pop       1000ms ease-out infinite;
+  --animate-quiz-pulse:     quiz-pulse     1800ms ease-in-out infinite;
+  --animate-quiz-float:     quiz-float     2600ms ease-in-out infinite;
+  --animate-quiz-shimmer:   quiz-shimmer   2200ms ease-in-out infinite;
+  --animate-quiz-scene-out: quiz-scene-out 3200ms linear forwards;
+}
+
+/* ── 客製特效問卷的 keyframes ─────────────────────────────────────────
+   一律只動 transform / opacity / filter / box-shadow（GPU 友善）。
+   box-shadow 的第一段永遠保留 Neobrutalism 的 hard offset shadow。 */
+
+@keyframes quiz-particle-out {
+  0%   { transform: translate(-50%, -50%) scale(0.3) rotate(0deg); opacity: 0; }
+  18%  { opacity: 1; }
+  100% {
+    transform: translate(calc(-50% + var(--quiz-tx, 0px)), calc(-50% + var(--quiz-ty, 0px)))
+               scale(1) rotate(var(--quiz-rot, 0deg));
+    opacity: 0;
+  }
+}
+
+@keyframes quiz-particle-in {
+  0%   {
+    transform: translate(calc(-50% + var(--quiz-tx, 0px)), calc(-50% + var(--quiz-ty, 0px)))
+               scale(1) rotate(var(--quiz-rot, 0deg));
+    opacity: 0;
+  }
+  20%  { opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.2) rotate(0deg); opacity: 0; }
+}
+
+@keyframes quiz-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  30%      { transform: translateY(-9px) scale(1.03); }
+  55%      { transform: translateY(0) scale(0.985); }
+  75%      { transform: translateY(-4px) scale(1.01); }
+}
+
+@keyframes quiz-shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  15%      { transform: translateX(-6px) rotate(-1.6deg); }
+  30%      { transform: translateX(6px)  rotate(1.6deg); }
+  45%      { transform: translateX(-5px) rotate(-1.2deg); }
+  60%      { transform: translateX(5px)  rotate(1.2deg); }
+  80%      { transform: translateX(-2px) rotate(-0.5deg); }
+}
+
+@keyframes quiz-nudge {
+  0%, 100% { transform: translateX(0); }
+  35%      { transform: translateX(6px); }
+  70%      { transform: translateX(-3px); }
+}
+
+@keyframes quiz-bloom {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.06) rotate(-1.5deg); }
+  70%  { transform: scale(0.99) rotate(0.8deg); }
+  100% { transform: scale(1); }
+}
+
+@keyframes quiz-openup {
+  0%   { transform: scaleX(0.86) scaleY(0.7); }
+  55%  { transform: scaleX(1.05) scaleY(1.08); }
+  100% { transform: none; }
+}
+
+@keyframes quiz-dashout {
+  0%   { transform: translateX(0); opacity: 1; }
+  40%  { transform: translateX(112%); opacity: 0.15; }
+  56%  { transform: translateX(112%); opacity: 0; }
+  72%  { transform: translateX(-7%); opacity: 1; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes quiz-liedown {
+  0%, 100%  { transform: none; }
+  40%, 68%  { transform: rotate(-7deg) scaleY(0.86) translateY(8px); }
+}
+
+@keyframes quiz-jitter {
+  0%, 100% { transform: none; }
+  10% { transform: translate(-1.5px, 1px); }
+  20% { transform: translate(1.5px, -1px); }
+  30% { transform: translate(-1.5px, -1px); }
+  40% { transform: translate(1.5px, 1px); }
+  50% { transform: translate(-1px, 1.5px); }
+  60% { transform: translate(1px, -1.5px); }
+  70% { transform: translate(-1.5px, 0); }
+  80% { transform: translate(1.5px, 0); }
+  90% { transform: translate(-1px, 1px); }
+}
+
+@keyframes quiz-strobe {
+  0%, 100% { filter: none; }
+  20% { filter: brightness(1.6) saturate(1.6); }
+  40% { filter: brightness(0.85); }
+  60% { filter: brightness(1.5) saturate(1.4); }
+  80% { filter: brightness(0.95); }
+}
+
+@keyframes quiz-solemn {
+  0%   { filter: brightness(1); }
+  22%  { filter: brightness(1.75); }
+  100% { filter: brightness(1); }
+}
+
+@keyframes quiz-vanish {
+  0%, 100% { opacity: 1; }
+  45%      { opacity: 0.08; }
+}
+
+@keyframes quiz-shrink {
+  0%, 100% { transform: none; }
+  55%      { transform: translate(-16%, 8%) scale(0.72); }
+}
+
+@keyframes quiz-crack {
+  0%   { transform: none; }
+  30%  { transform: rotate(-2deg) scale(1.02); }
+  55%  { transform: rotate(2.5deg) scaleY(0.94); }
+  100% { transform: none; }
+}
+
+@keyframes quiz-tick {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(1.8deg); }
+  50%      { transform: rotate(0deg); }
+  75%      { transform: rotate(-1.8deg); }
+}
+
+@keyframes quiz-frost {
+  0%   { box-shadow: 3px 3px 0 0 var(--color-foreground), inset 0 0 0 0 oklch(1 0 0 / 0); }
+  100% { box-shadow: 3px 3px 0 0 var(--color-foreground), inset 0 0 22px 7px oklch(1 0 0 / 0.9); }
+}
+
+@keyframes quiz-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.022); }
+}
+
+@keyframes quiz-sway {
+  0%, 100% { transform: rotate(-1.1deg); }
+  50%      { transform: rotate(1.1deg); }
+}
+
+@keyframes quiz-halo {
+  0%, 100% { box-shadow: 3px 3px 0 0 var(--color-foreground), 0 0 0 0 oklch(0.85 0.14 260 / 0.6); }
+  50%      { box-shadow: 3px 3px 0 0 var(--color-foreground), 0 0 22px 7px oklch(0.85 0.14 260 / 0.6); }
+}
+
+@keyframes quiz-sunglow {
+  0%, 100% { box-shadow: 3px 3px 0 0 var(--color-foreground), 0 0 12px 2px oklch(0.9 0.17 90 / 0.7); }
+  50%      { box-shadow: 3px 3px 0 0 var(--color-foreground), 0 0 34px 12px oklch(0.9 0.17 90 / 0.9); }
+}
+
+@keyframes quiz-stink {
+  0%, 100% { box-shadow: 3px 3px 0 0 var(--color-foreground), 0 0 0 0 oklch(0.75 0.18 135 / 0.55); }
+  50%      { box-shadow: 3px 3px 0 0 var(--color-foreground), 0 0 0 14px oklch(0.75 0.18 135 / 0); }
+}
+
+@keyframes quiz-dance {
+  0%, 100% { transform: rotate(-2.5deg) translateY(0); }
+  25%      { transform: rotate(2.5deg) translateY(-4px); }
+  50%      { transform: rotate(-2.5deg) translateY(0); }
+  75%      { transform: rotate(2.5deg) translateY(-4px); }
+}
+
+@keyframes quiz-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes quiz-fall {
+  0%   { transform: translate3d(0, -12vh, 0) rotate(0deg); opacity: 0; }
+  8%   { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translate3d(var(--quiz-sway, 0px), 112vh, 0) rotate(var(--quiz-rot, 0deg)); opacity: 0; }
+}
+
+@keyframes quiz-raindrop {
+  0%   { transform: translate3d(0, -20vh, 0); opacity: 0; }
+  12%  { opacity: 1; }
+  100% { transform: translate3d(0, 115vh, 0); opacity: 0.9; }
+}
+
+@keyframes quiz-pop {
+  0%   { transform: scale(0) rotate(-8deg); opacity: 0; }
+  35%  { transform: scale(1.2) rotate(4deg); opacity: 1; }
+  100% { transform: scale(0.9) rotate(0deg); opacity: 0; }
+}
+
+@keyframes quiz-pulse {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.85; }
+  50%      { transform: translateX(-50%) scale(1.14); opacity: 1; }
+}
+
+@keyframes quiz-float {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50%      { transform: translateY(-14px) rotate(6deg); }
+}
+
+@keyframes quiz-shimmer {
+  0%, 100% { opacity: 0.35; transform: scaleY(1); }
+  50%      { opacity: 0.7;  transform: scaleY(1.15); }
+}
+
+@keyframes quiz-scene-out {
+  0%, 72% { opacity: 1; }
+  100%    { opacity: 0; }
+}
+
+/* 保險：JS 那邊（useReducedMotion）已經讓 burst / scene 不掛，這裡再擋一次。 */
+@media (prefers-reduced-motion: reduce) {
+  [class*="animate-quiz-"] {
+    animation: none !important;
+  }
 }
 
 :root {
