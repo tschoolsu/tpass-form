@@ -58,7 +58,7 @@ import {
 export type SceneKey = "spring" | "summer" | "autumn" | "winter" | "rain" | "sixtyseven";
 
 /** 選項文字本身的特殊處理（由 OptionCard 分派）。 */
-export type TextFx = "marquee" | "scramble" | "ticker" | "cite";
+export type TextFx = "marquee" | "scramble" | "ticker";
 
 export interface BurstSpec {
   emojis: string[];
@@ -326,7 +326,6 @@ export const OPTION_EFFECTS: Record<string, OptionEffect> = {
   o_serious: {
     icon: FileText,
     className: "bg-[oklch(0.96_0.01_80)] font-mono tracking-tight",
-    textFx: "cite",
     selectedClass: "animate-quiz-halo",
     burst: { emojis: ["📄", "🧐", "✒️"], count: 8, duration: 1400 },
   },

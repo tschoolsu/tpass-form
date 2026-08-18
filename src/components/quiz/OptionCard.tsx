@@ -132,9 +132,6 @@ export function OptionCard({
         ) : (
           label
         )}
-        {fx.textFx === "cite" && (
-          <sup className="ml-0.5 font-mono text-[10px] text-muted-foreground">[1]</sup>
-        )}
         {animate && fx.textFx === "ticker" && <Ticker key={burstKey} />}
       </span>
 
