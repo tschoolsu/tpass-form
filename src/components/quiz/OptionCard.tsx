@@ -11,8 +11,11 @@ import { Burst } from "@/components/quiz/Burst";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+// ⚠ 背景色**不能**放進 BASE：Tailwind 會把 bg-card 這種 theme token 排在
+// arbitrary 的 bg-[oklch(…)] 之後，同權重下 BASE 反而蓋掉選項自己的顏色
+// （症狀：整排按鈕都是白底，設白字的那幾個直接看不到字）。背景一律由 fx 提供。
 const BASE =
-  "relative flex w-full items-center gap-3 overflow-visible rounded-2xl border-2 border-foreground bg-card px-4 py-3.5 text-left font-bold transition-all duration-200 shadow-[3px_3px_0_0_var(--color-foreground)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)] active:translate-y-0 active:shadow-[2px_2px_0_0_var(--color-foreground)]";
+  "relative flex w-full items-center gap-3 overflow-visible rounded-2xl border-2 border-foreground px-4 py-3.5 text-left font-bold transition-all duration-200 shadow-[3px_3px_0_0_var(--color-foreground)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)] active:translate-y-0 active:shadow-[2px_2px_0_0_var(--color-foreground)]";
 
 // ── textFx：少數選項的文字本身要有事發生 ──────────────────────────────
 function Marquee({ text }: { text: string }) {
@@ -110,7 +113,7 @@ export function OptionCard({
       onClick={onSelect}
       className={cn(
         BASE,
-        fx.className,
+        fx.className ?? "bg-card",
         selected && "ring-4 ring-foreground/15",
         animate && fx.selectedClass,
       )}

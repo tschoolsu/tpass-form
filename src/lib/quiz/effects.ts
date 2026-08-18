@@ -201,7 +201,8 @@ export const OPTION_EFFECTS: Record<string, OptionEffect> = {
   },
   o_rage: {
     icon: AudioLines,
-    className: "bg-[oklch(0.72_0.18_25)] text-[oklch(0.99_0_0)]",
+    // 原本 L=0.72 太亮，白字只有 3.52:1（不到 AA）；壓深到 0.55 → 8.15:1，怒氣值也更足。
+    className: "bg-[oklch(0.55_0.2_25)] text-[oklch(0.99_0_0)]",
     selectedClass: "animate-quiz-shake",
     shakeScreen: true,
     burst: { emojis: ["😡", "🥀", "💀", "😱", "😭"], count: 24, spread: 210, duration: 850 },
