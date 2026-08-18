@@ -3,11 +3,9 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Download, Inbox } from "lucide-react";
 import { canReadResponses, requireAdmin } from "@/lib/guard";
 import { getForm, listResponses } from "@/lib/forms";
-import { answerToText, questionBlocks } from "@/lib/answer-format";
-import { gradeLabel } from "@/lib/grade";
-import type { UploadedFile } from "@/components/fill/QuestionRenderer";
-import type { QuestionBlock } from "@/lib/survey-schema";
+import { questionBlocks } from "@/lib/answer-format";
 import { Badge } from "@/components/ui/primitives";
+import { ResponsesView } from "@/components/responses/ResponsesView";
 
 export default async function ResponsesPage({
   params,
@@ -40,9 +38,14 @@ export default async function ResponsesPage({
         </a>
       </div>
 
-      <div className="flex items-baseline gap-3 mb-6">
+      <div className="flex flex-wrap items-baseline gap-3 mb-6">
         <h1 className="font-extrabold text-2xl tracking-tight">{form.title}</h1>
         <Badge className="bg-tone-green-badge">{responses.length} 份回覆</Badge>
+        {responses.length > 0 && (
+          <span className="font-mono text-[11px] text-muted-foreground">
+            最後一筆 {responses[0].submittedAt.toLocaleString("zh-TW")}
+          </span>
+        )}
       </div>
 
       {responses.length === 0 ? (
@@ -51,61 +54,13 @@ export default async function ResponsesPage({
           <p className="mt-3 font-bold">還沒有人填寫</p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {responses.map((r, idx) => (
-            <li
-              key={r.id}
-              className="rounded-2xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0_0_var(--color-foreground)]"
-            >
-              <div className="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b-2 border-dashed border-foreground/15">
-                <Badge>#{responses.length - idx}</Badge>
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  {r.submittedAt.toLocaleString("zh-TW")}
-                </span>
-                {r.respondentName && <Badge className="bg-tone-blue-badge">{r.respondentName}</Badge>}
-                {r.respondentEmail && (
-                  <Badge className="bg-tone-blue-badge">{r.respondentEmail}</Badge>
-                )}
-                {r.respondentGrade !== null && (
-                  <Badge className="bg-tone-violet-badge">{gradeLabel(r.respondentGrade)}</Badge>
-                )}
-              </div>
-              <dl className="flex flex-col gap-2.5">
-                {questions.map((q) => (
-                  <div key={q.id}>
-                    <dt className="font-bold text-sm">{q.title || "（未命名題目）"}</dt>
-                    <dd className="mt-0.5 font-medium text-muted-foreground">
-                      <AnswerView q={q} value={r.answers[q.id]} />
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </li>
-          ))}
-        </ul>
+        <ResponsesView
+          formId={id}
+          questions={questions}
+          responses={responses}
+          anonymous={form.settings.anonymous}
+        />
       )}
     </div>
   );
-}
-
-function AnswerView({ q, value }: { q: QuestionBlock; value: unknown }) {
-  if (value === undefined || value === null || (Array.isArray(value) && value.length === 0)) {
-    return <span className="text-foreground/40">—</span>;
-  }
-  if (q.type === "file_upload" && Array.isArray(value)) {
-    return (
-      <span className="flex flex-wrap gap-2">
-        {(value as UploadedFile[]).map((f) => (
-          <a
-            key={f.id}
-            href={`/api/files/${f.id}`}
-            className="inline-block rounded-md border-2 border-foreground bg-card px-2 py-0.5 font-mono text-xs font-bold text-accent hover:underline"
-          >
-            {f.name}
-          </a>
-        ))}
-      </span>
-    );
-  }
-  return <span className="whitespace-pre-wrap">{answerToText(q, value)}</span>;
 }

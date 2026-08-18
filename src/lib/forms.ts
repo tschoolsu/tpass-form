@@ -4,6 +4,9 @@ import "server-only";
 import { customAlphabet } from "nanoid";
 import type { Form } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { deleteObject } from "@/lib/storage";
+import type { ResponseRecord } from "@/lib/response-stats";
+import type { UploadedFile } from "@/components/fill/QuestionRenderer";
 import {
   formDefinitionSchema,
   formSettingsSchema,
@@ -168,14 +171,8 @@ export async function setStatus(id: string, status: FormStatus): Promise<void> {
   });
 }
 
-export interface ResponseRow {
-  id: string;
-  submittedAt: Date;
-  respondentName: string | null;
-  respondentEmail: string | null;
-  respondentGrade: number | null;
-  answers: Record<string, unknown>;
-}
+// 回覆的形狀定義在 response-stats（isomorphic），這裡沿用同一份，避免 server/client 各寫一份。
+export type ResponseRow = ResponseRecord;
 
 // 列出某問卷的回覆（授權在呼叫端 requireAdmin）。
 export async function listResponses(id: string): Promise<ResponseRow[]> {
@@ -191,6 +188,52 @@ export async function listResponses(id: string): Promise<ResponseRow[]> {
     respondentGrade: r.respondentGrade,
     answers: (r.answers as Record<string, unknown>) ?? {},
   }));
+}
+
+// 刪掉單一筆回覆，連同該筆上傳的附件（Upload row + 儲存體物件）。
+// 副作用：若問卷設了 oneResponsePerUser，unique key（formId+respondentSub / formId+anonHash）
+// 隨 row 一起消失 → 該使用者可以再填一次。這是刻意的行為，不是漏洞。
+export async function deleteResponse(formId: string, responseId: string): Promise<void> {
+  // formId 一起帶入 where，擋「拿 A 表單的權限刪 B 表單的回覆」。
+  const row = await prisma.response.findFirst({
+    where: { id: responseId, formId },
+    select: { answers: true },
+  });
+  if (!row) throw new Error("not found");
+
+  const uploadIds = collectUploadIds(row.answers);
+  const uploads = uploadIds.length
+    ? await prisma.upload.findMany({
+        where: { id: { in: uploadIds }, formId },
+        select: { id: true, storageKey: true },
+      })
+    : [];
+
+  await prisma.$transaction([
+    prisma.response.delete({ where: { id: responseId } }),
+    prisma.upload.deleteMany({ where: { id: { in: uploads.map((u) => u.id) } } }),
+  ]);
+
+  // 儲存體是 best-effort：刪不掉只留孤兒檔案，不該讓已完成的 DB 交易白費。
+  for (const u of uploads) {
+    try {
+      await deleteObject(u.storageKey);
+    } catch (e) {
+      console.error("[forms] deleteObject failed", u.storageKey, e);
+    }
+  }
+}
+
+// 從 answers 掃出所有檔案題的 upload id（值形狀 = UploadedFile[]）。
+function collectUploadIds(answers: unknown): string[] {
+  const ids: string[] = [];
+  for (const value of Object.values((answers as Record<string, unknown>) ?? {})) {
+    if (!Array.isArray(value)) continue;
+    for (const f of value as UploadedFile[]) {
+      if (f && typeof f.id === "string") ids.push(f.id);
+    }
+  }
+  return ids;
 }
 
 export async function deleteForm(id: string): Promise<void> {

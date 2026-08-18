@@ -41,7 +41,8 @@ export function walkVisitedQuestions(
   return walkVisitedSections(def, answers).flatMap(questionsOf);
 }
 
-function isBlank(v: unknown): boolean {
+// 空白判定（驗證與結果彙整共用：沒填就是沒填）。
+export function isBlank(v: unknown): boolean {
   if (v === undefined || v === null) return true;
   if (typeof v === "string") return v.trim() === "";
   if (Array.isArray(v)) return v.length === 0;
