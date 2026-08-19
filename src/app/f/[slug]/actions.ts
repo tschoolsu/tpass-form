@@ -1,14 +1,21 @@
 "use server";
 
-// 送出問卷。身分一律由伺服器從驗章後的 session 戳記（client 傳的身分一概不信）。
-import { createHash } from "node:crypto";
+// 填寫端的 server actions（送出 / 草稿）。身分一律由伺服器從驗章後的 session 戳記，
+// client 傳的身分與草稿擁有者一概不信。
 import { Prisma } from "@prisma/client";
-import { authConfig } from "@/config/auth";
 import { requireSession } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { getPublicForm } from "@/lib/forms";
 import { validateAnswers, type AnswerMap } from "@/lib/answers";
 import { deriveGrade } from "@/lib/grade";
+import {
+  deleteDraft,
+  discardDraft,
+  draftKeyFor,
+  sanitizeDraft,
+  upsertDraft,
+  type DraftPayload,
+} from "@/lib/response-draft";
 
 export interface SubmitResult {
   ok: boolean;
@@ -53,9 +60,7 @@ export async function submitFormAction(
   if (oneResponsePerUser) {
     if (anonymous) {
       // secret 在 config REQUIRED 裡強制存在（M1：空 secret 會讓匿名雜湊可被反解）。
-      stamp.anonHash = createHash("sha256")
-        .update(`${session.sub}:${form.id}:${authConfig.anonHashSecret}`)
-        .digest("hex");
+      stamp.anonHash = draftKeyFor(session.sub, form.id);
     } else {
       stamp.respondentSub = session.sub;
     }
@@ -76,5 +81,49 @@ export async function submitFormAction(
     throw e;
   }
 
+  // 回覆已落地，草稿功成身退（附件已屬於這筆回覆，不能跟著刪）。
+  await deleteDraft(form.id, session.sub);
+
+  return { ok: true };
+}
+
+export interface DraftResult {
+  ok: boolean;
+  savedAt?: string;
+  message?: string;
+}
+
+// 自動儲存填寫進度。不驗 answers（草稿允許不完整），但只收 definition 裡真的存在的
+// 題目，並限制大小——server action 可被直接 POST，這裡是唯一的把關點。
+export async function saveDraftAction(
+  slug: string,
+  payload: DraftPayload,
+): Promise<DraftResult> {
+  const session = await requireSession(`/f/${slug}`);
+  const form = await getPublicForm(slug);
+  if (!form || form.status !== "published" || !form.settings.acceptingResponses) {
+    return { ok: false, message: "這份問卷目前沒有開放填寫。" };
+  }
+
+  const clean = sanitizeDraft(form.definition, payload);
+  if (!clean) return { ok: false, message: "內容過大，無法儲存草稿。" };
+
+  // 一題都沒答 → 不留草稿（光是翻頁就生一列是雜訊，也會誤觸「已還原進度」提示）。
+  if (Object.keys(clean.answers).length === 0) {
+    await deleteDraft(form.id, session.sub);
+    return { ok: true };
+  }
+
+  const savedAt = await upsertDraft(form.id, session.sub, clean);
+  return { ok: true, savedAt: savedAt.toISOString() };
+}
+
+// 使用者主動放棄草稿（連同草稿裡上傳的附件一起回收）。
+export async function discardDraftAction(slug: string): Promise<DraftResult> {
+  const session = await requireSession(`/f/${slug}`);
+  const form = await getPublicForm(slug);
+  if (!form) return { ok: false, message: "找不到這份問卷。" };
+
+  await discardDraft(form.id, session.sub);
   return { ok: true };
 }

@@ -7,6 +7,7 @@ import { getPublicForm } from "@/lib/forms";
 import { isAdmin } from "@/config/admin";
 import { authConfig, loginUrlFor } from "@/config/auth";
 import { hasQuizSkin } from "@/lib/quiz/skins";
+import { getDraft } from "@/lib/response-draft";
 import { IDENTITY_FIELD_LABELS } from "@/lib/survey-schema";
 
 function Shell({ children, isLoggedIn, admin }: { children: React.ReactNode; isLoggedIn: boolean; admin: boolean }) {
@@ -90,6 +91,9 @@ export default async function FillPage({
       ? `此問卷將記錄你的：${identityFields.map((f) => IDENTITY_FIELD_LABELS[f]).join("、")}`
       : null;
 
+  // 填寫進度草稿（自動儲存）：回到同一份問卷就接續上次。
+  const draft = await getDraft(form.id, session.sub);
+
   // 少數問卷有客製特效皮（題目文字仍讀 DB，特效讀 code）；其餘一律走通用填寫器。
   if (hasQuizSkin(slug)) {
     return (
@@ -101,6 +105,8 @@ export default async function FillPage({
           definition={form.definition}
           tone={form.settings.theme.tone}
           identityNotice={identityNotice}
+          initialAnswers={draft?.answers ?? null}
+          draftSavedAt={draft?.updatedAt.toISOString() ?? null}
         />
       </Shell>
     );
@@ -116,6 +122,9 @@ export default async function FillPage({
         definition={form.definition}
         tone={form.settings.theme.tone}
         identityNotice={identityNotice}
+        initialAnswers={draft?.answers ?? null}
+        initialHistory={draft?.history ?? null}
+        draftSavedAt={draft?.updatedAt.toISOString() ?? null}
       />
     </Shell>
   );

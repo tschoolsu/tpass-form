@@ -18,6 +18,8 @@ import { Scene } from "@/components/quiz/Scene";
 import { useReducedMotion } from "@/components/quiz/useReducedMotion";
 import { Button, cn } from "@/components/ui/primitives";
 import { submitFormAction, type SubmitResult } from "@/app/f/[slug]/actions";
+import { useDraftAutosave } from "@/components/fill/useDraftAutosave";
+import { DraftBar } from "@/components/fill/DraftBar";
 
 const TONE_BG: Record<Tone, string> = {
   green: "bg-tone-green-bg",
@@ -26,6 +28,10 @@ const TONE_BG: Record<Tone, string> = {
   violet: "bg-tone-violet-bg",
   rose: "bg-tone-rose-bg",
 };
+
+// 這版是一題一頁、順序固定，沒有區段跳轉，所以草稿的 history 恆為空。
+// 必須是模組層級常數：每次 render 新建陣列會讓 autosave 的 effect 無限觸發。
+const NO_HISTORY: string[] = [];
 
 /** 選中後停留多久再自動進下一題（要看得完特效）。 */
 const ADVANCE_MS = 1500;
@@ -38,6 +44,9 @@ interface Props {
   definition: FormDefinition;
   tone: Tone;
   identityNotice: string | null;
+  // 伺服器端草稿（自動儲存的填寫進度）。沒有草稿時一律 null。
+  initialAnswers?: AnswerMap | null;
+  draftSavedAt?: string | null;
 }
 
 export function QuizFiller({
@@ -47,6 +56,8 @@ export function QuizFiller({
   definition,
   tone,
   identityNotice,
+  initialAnswers = null,
+  draftSavedAt = null,
 }: Props) {
   const questions = React.useMemo(
     () =>
@@ -57,13 +68,19 @@ export function QuizFiller({
   );
 
   const reduced = useReducedMotion();
-  const [step, setStep] = React.useState(0);
-  const [answers, setAnswers] = React.useState<AnswerMap>({});
+  const [answers, setAnswers] = React.useState<AnswerMap>(() => initialAnswers ?? {});
+  // step 不入草稿：直接回到第一題還沒答的（全答完就停在最後一題）。
+  const [step, setStep] = React.useState(() => {
+    const first = questions.findIndex((q) => typeof (initialAnswers ?? {})[q.id] !== "string");
+    return first === -1 ? Math.max(questions.length - 1, 0) : first;
+  });
   const [burstKey, setBurstKey] = React.useState(0);
   const [error, setError] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [done, setDone] = React.useState(false);
+
+  const draft = useDraftAutosave(slug, answers, NO_HISTORY, draftSavedAt);
 
   const advanceTimer = React.useRef<number | null>(null);
   const cancelAdvance = React.useCallback(() => {
@@ -130,11 +147,21 @@ export function QuizFiller({
       setSubmitting(false);
     }
     if (res.ok) {
+      draft.markDone(); // 送出後草稿已由伺服器刪掉，別再存回去
       setBurstKey((k) => k + 1);
       setDone(true);
       return;
     }
     setMessage(res.message ?? "送出失敗，請再試一次。");
+  }
+
+  async function discard() {
+    cancelAdvance();
+    await draft.discard();
+    setAnswers({});
+    setStep(0);
+    setError(null);
+    setMessage(null);
   }
 
   if (done) {
@@ -195,6 +222,12 @@ export function QuizFiller({
         )}
       </div>
 
+      {draft.restored && (
+        <p className="rounded-xl border-2 border-foreground bg-tone-green-badge px-3 py-2 font-mono text-[11px] font-bold">
+          已還原你上次的填寫進度
+        </p>
+      )}
+
       {/* 進度 */}
       <div className="flex items-center gap-3">
         <span className="shrink-0 rounded-md border-2 border-foreground bg-card px-2 py-0.5 font-mono text-[11px] font-bold">
@@ -245,6 +278,13 @@ export function QuizFiller({
           {message}
         </p>
       )}
+
+      <DraftBar
+        saveState={draft.saveState}
+        savedAt={draft.savedAt}
+        disabled={submitting}
+        onDiscard={() => void discard()}
+      />
 
       {/* 導覽 */}
       <div className="flex items-center justify-between gap-3">

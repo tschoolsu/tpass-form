@@ -14,6 +14,8 @@ import { validateValue, type AnswerMap } from "@/lib/answers";
 import { QuestionRenderer } from "@/components/fill/QuestionRenderer";
 import { Button, cn } from "@/components/ui/primitives";
 import { submitFormAction, type SubmitResult } from "@/app/f/[slug]/actions";
+import { useDraftAutosave } from "@/components/fill/useDraftAutosave";
+import { DraftBar } from "@/components/fill/DraftBar";
 
 interface Props {
   slug: string;
@@ -23,6 +25,10 @@ interface Props {
   definition: FormDefinition;
   tone: Tone;
   identityNotice: string | null;
+  // 伺服器端草稿（自動儲存的填寫進度）。沒有草稿時一律 null。
+  initialAnswers?: AnswerMap | null;
+  initialHistory?: string[] | null;
+  draftSavedAt?: string | null;
 }
 
 const TONE_BG: Record<Tone, string> = {
@@ -41,12 +47,19 @@ export function FormFiller({
   definition,
   tone,
   identityNotice,
+  initialAnswers = null,
+  initialHistory = null,
+  draftSavedAt = null,
 }: Props) {
   const sections = React.useMemo(() => getSections(definition), [definition]);
   const byId = React.useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections]);
 
-  const [answers, setAnswers] = React.useState<AnswerMap>({});
-  const [history, setHistory] = React.useState<string[]>([START_SECTION_ID]);
+  const [answers, setAnswers] = React.useState<AnswerMap>(() => initialAnswers ?? {});
+  // 草稿存下來的區段可能已被建構者刪掉，只留現在還存在的；全沒了就回開頭。
+  const [history, setHistory] = React.useState<string[]>(() => {
+    const kept = (initialHistory ?? []).filter((id) => byId.has(id));
+    return kept.length > 0 ? kept : [START_SECTION_ID];
+  });
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [submitting, setSubmitting] = React.useState(false);
   const [done, setDone] = React.useState(false);
@@ -56,6 +69,8 @@ export function FormFiller({
   const section = byId.get(currentId) ?? sections[0];
   const nextTarget = resolveNextSection(section, sections, answers);
   const isLast = nextTarget === "END";
+
+  const draft = useDraftAutosave(slug, answers, history, draftSavedAt);
 
   const setAnswer = (qid: string, value: unknown) => {
     setAnswers((a) => ({ ...a, [qid]: value }));
@@ -88,6 +103,7 @@ export function FormFiller({
         setSubmitting(false);
       }
       if (res.ok) {
+        draft.markDone(); // 送出後草稿已由伺服器刪掉，別再存回去
         setDone(true);
       } else {
         if (res.errors) setErrors(res.errors);
@@ -101,6 +117,15 @@ export function FormFiller({
 
   function goBack() {
     setHistory((h) => (h.length > 1 ? h.slice(0, -1) : h));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function discard() {
+    await draft.discard();
+    setAnswers({});
+    setHistory([START_SECTION_ID]);
+    setErrors({});
+    setMessage(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -133,6 +158,12 @@ export function FormFiller({
           </p>
         )}
       </div>
+
+      {draft.restored && (
+        <p className="rounded-xl border-2 border-foreground bg-tone-green-badge px-3 py-2 font-mono text-[11px] font-bold">
+          已還原你上次的填寫進度
+        </p>
+      )}
 
       {/* 區段標題 */}
       {section.id !== START_SECTION_ID && (section.title || section.description) && (
@@ -182,6 +213,13 @@ export function FormFiller({
         </p>
       )}
 
+      <DraftBar
+        saveState={draft.saveState}
+        savedAt={draft.savedAt}
+        disabled={submitting}
+        onDiscard={() => void discard()}
+      />
+
       {/* 導覽 */}
       <div className="flex items-center justify-between gap-3">
         <Button
@@ -212,3 +250,4 @@ export function FormFiller({
     </div>
   );
 }
+

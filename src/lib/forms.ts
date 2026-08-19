@@ -225,7 +225,7 @@ export async function deleteResponse(formId: string, responseId: string): Promis
 }
 
 // 從 answers 掃出所有檔案題的 upload id（值形狀 = UploadedFile[]）。
-function collectUploadIds(answers: unknown): string[] {
+export function collectUploadIds(answers: unknown): string[] {
   const ids: string[] = [];
   for (const value of Object.values((answers as Record<string, unknown>) ?? {})) {
     if (!Array.isArray(value)) continue;

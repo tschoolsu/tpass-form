@@ -26,6 +26,7 @@ model Form {
   updatedAt   DateTime   @updatedAt
   publishedAt DateTime?
   responses   Response[]
+  drafts      ResponseDraft[]
 
   @@index([status])
   @@index([ownerSub])
@@ -45,6 +46,23 @@ model Response {
 
   @@unique([formId, respondentSub])
   @@unique([formId, anonHash])
+  @@index([formId])
+}
+
+// 填寫進度草稿（自動儲存）。一份表單 × 一個填寫者最多一列；送出成功即刪。
+// ownerKey 是 sha256(sub:formId:secret)，不存明文 sub —— 匿名問卷的草稿因此也無法反查身分，
+// 而且匿名 / 非匿名走同一條路徑，不用分支。
+model ResponseDraft {
+  id        String   @id @default(cuid())
+  formId    String
+  form      Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  ownerKey  String
+  answers   Json // { [questionId]: value }，形狀同 Response.answers
+  history   Json // string[]：section id 堆疊，用來還原「填到第幾段」
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([formId, ownerKey])
   @@index([formId])
 }
 
