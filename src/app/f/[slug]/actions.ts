@@ -4,6 +4,7 @@
 // client 傳的身分與草稿擁有者一概不信。
 import { Prisma } from "@prisma/client";
 import { requireSession } from "@/lib/guard";
+import { anonKeyFor } from "@/lib/anon-key";
 import { prisma } from "@/lib/db";
 import { getPublicForm } from "@/lib/forms";
 import { validateAnswers, type AnswerMap } from "@/lib/answers";
@@ -11,7 +12,6 @@ import { deriveGrade } from "@/lib/grade";
 import {
   deleteDraft,
   discardDraft,
-  draftKeyFor,
   sanitizeDraft,
   upsertDraft,
   type DraftPayload,
@@ -60,7 +60,7 @@ export async function submitFormAction(
   if (oneResponsePerUser) {
     if (anonymous) {
       // secret 在 config REQUIRED 裡強制存在（M1：空 secret 會讓匿名雜湊可被反解）。
-      stamp.anonHash = draftKeyFor(session.sub, form.id);
+      stamp.anonHash = anonKeyFor(session.sub, form.id);
     } else {
       stamp.respondentSub = session.sub;
     }

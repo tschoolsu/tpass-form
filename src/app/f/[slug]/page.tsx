@@ -3,7 +3,7 @@ import { Header } from "@/components/common/Header";
 import { FormFiller } from "@/components/fill/FormFiller";
 import { QuizFiller } from "@/components/quiz/QuizFiller";
 import { getSession } from "@/lib/tpass-auth";
-import { getPublicForm } from "@/lib/forms";
+import { getPublicForm, hasSubmitted } from "@/lib/forms";
 import { isAdmin } from "@/config/admin";
 import { authConfig, loginUrlFor } from "@/config/auth";
 import { hasQuizSkin } from "@/lib/quiz/skins";
@@ -80,6 +80,16 @@ export default async function FillPage({
             使用學校帳號登入
           </a>
         </div>
+      </Shell>
+    );
+  }
+
+  // 只能填一次的問卷：填過就不再交出填寫器。原本唯一的攔截是送出時撞 DB unique 約束，
+  // 使用者得整份重填完才被擋 —— 體感就是「可以重複填答」。
+  if (await hasSubmitted(form, session.sub)) {
+    return (
+      <Shell isLoggedIn admin={admin}>
+        <Notice title="你已經填過這份問卷了" body="這份問卷每個帳號只能填寫一次，感謝你的回覆。" />
       </Shell>
     );
   }

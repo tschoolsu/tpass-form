@@ -1,11 +1,10 @@
 // 填寫進度草稿（自動儲存）的唯一資料存取層。
 // 草稿只有本人一個寫入者，所以不需要像表單建構器那樣的樂觀鎖。
 import "server-only";
-import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
-import { authConfig } from "@/config/auth";
 import { prisma } from "@/lib/db";
 import { deleteObject } from "@/lib/storage";
+import { anonKeyFor } from "@/lib/anon-key";
 import { collectUploadIds } from "@/lib/forms";
 import type { AnswerMap } from "@/lib/answers";
 import { type FormDefinition, START_SECTION_ID } from "@/lib/survey-schema";
@@ -13,14 +12,6 @@ import { type FormDefinition, START_SECTION_ID } from "@/lib/survey-schema";
 // server action 可被直接 POST，草稿又不過 validateAnswers（草稿本來就允許不完整），
 // 所以尺寸上限是擋「灌爆 DB」的最後一道防線。
 export const MAX_DRAFT_BYTES = 256 * 1024;
-
-// 草稿的擁有者 key：不存明文 sub，匿名問卷的草稿因此無法反查身分。
-// 公式與 Response.anonHash 相同，兩處共用這一個函式。
-export function draftKeyFor(sub: string, formId: string): string {
-  return createHash("sha256")
-    .update(`${sub}:${formId}:${authConfig.anonHashSecret}`)
-    .digest("hex");
-}
 
 export interface DraftPayload {
   answers: AnswerMap;
@@ -60,7 +51,7 @@ export function sanitizeDraft(
 
 export async function getDraft(formId: string, sub: string): Promise<DraftView | null> {
   const row = await prisma.responseDraft.findUnique({
-    where: { formId_ownerKey: { formId, ownerKey: draftKeyFor(sub, formId) } },
+    where: { formId_ownerKey: { formId, ownerKey: anonKeyFor(sub, formId) } },
   });
   if (!row) return null;
   return {
@@ -80,8 +71,8 @@ export async function upsertDraft(
     history: payload.history as Prisma.InputJsonValue,
   };
   const row = await prisma.responseDraft.upsert({
-    where: { formId_ownerKey: { formId, ownerKey: draftKeyFor(sub, formId) } },
-    create: { formId, ownerKey: draftKeyFor(sub, formId), ...data },
+    where: { formId_ownerKey: { formId, ownerKey: anonKeyFor(sub, formId) } },
+    create: { formId, ownerKey: anonKeyFor(sub, formId), ...data },
     update: data,
     select: { updatedAt: true },
   });
@@ -91,13 +82,13 @@ export async function upsertDraft(
 // 送出成功後用：只刪草稿列。草稿引用的 Upload 這時已經是正式回覆的附件，絕不能刪。
 export async function deleteDraft(formId: string, sub: string): Promise<void> {
   await prisma.responseDraft.deleteMany({
-    where: { formId, ownerKey: draftKeyFor(sub, formId) },
+    where: { formId, ownerKey: anonKeyFor(sub, formId) },
   });
 }
 
 // 使用者主動放棄草稿：連同草稿裡上傳、尚未屬於任何回覆的附件一起回收。
 export async function discardDraft(formId: string, sub: string): Promise<void> {
-  const ownerKey = draftKeyFor(sub, formId);
+  const ownerKey = anonKeyFor(sub, formId);
   const row = await prisma.responseDraft.findUnique({
     where: { formId_ownerKey: { formId, ownerKey } },
     select: { id: true, answers: true },

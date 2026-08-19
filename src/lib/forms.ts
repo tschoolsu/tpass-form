@@ -4,6 +4,7 @@ import "server-only";
 import { customAlphabet } from "nanoid";
 import type { Form } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { anonKeyFor } from "@/lib/anon-key";
 import { deleteObject } from "@/lib/storage";
 import type { ResponseRecord } from "@/lib/response-stats";
 import type { UploadedFile } from "@/components/fill/QuestionRenderer";
@@ -172,6 +173,18 @@ export async function setStatus(id: string, status: FormStatus): Promise<void> {
 }
 
 // 回覆的形狀定義在 response-stats（isomorphic），這裡沿用同一份，避免 server/client 各寫一份。
+// 這個人已經對這份問卷送出過了嗎？只在 oneResponsePerUser 時有意義。
+// 查的 key 與 submitFormAction 寫進去的那一份完全一致（匿名→anonHash、具名→respondentSub），
+// 所以這裡的判斷跟 DB unique 約束永遠同步——它只是把攔截點從「送出那一刻」提前到「進場前」，
+// 不是另一套規則。
+export async function hasSubmitted(form: FormView, sub: string): Promise<boolean> {
+  if (!form.settings.oneResponsePerUser) return false;
+  const where = form.settings.anonymous
+    ? { formId: form.id, anonHash: anonKeyFor(sub, form.id) }
+    : { formId: form.id, respondentSub: sub };
+  return (await prisma.response.count({ where })) > 0;
+}
+
 export type ResponseRow = ResponseRecord;
 
 // 列出某問卷的回覆（授權在呼叫端 requireAdmin）。
