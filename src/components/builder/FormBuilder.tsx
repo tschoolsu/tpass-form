@@ -38,6 +38,7 @@ import { Button, Input, Textarea, Badge } from "@/components/ui/primitives";
 import { SortableBlock } from "./SortableBlock";
 import { SettingsPanel } from "./SettingsPanel";
 import { CopyLinkButton } from "@/components/common/CopyLinkButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   saveFormAction,
   publishFormAction,
@@ -68,6 +69,7 @@ export function FormBuilder(props: Props) {
   const [saveState, setSaveState] = React.useState<SaveState>("saved");
   const [conflicted, setConflicted] = React.useState(false);
   const [publishErrors, setPublishErrors] = React.useState<string[]>([]);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
@@ -328,7 +330,7 @@ export function FormBuilder(props: Props) {
 
             <button
               type="button"
-              onClick={onDelete}
+              onClick={() => setConfirmDelete(true)}
               disabled={pending}
               className="mt-2 inline-flex items-center justify-center gap-1.5 text-sm font-bold text-muted-foreground hover:text-destructive"
             >
@@ -337,6 +339,21 @@ export function FormBuilder(props: Props) {
           </div>
         </aside>
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="確定刪除這份問卷？"
+        description={
+          <>
+            <strong className="text-foreground">「{title || "未命名問卷"}」</strong>
+            與它的所有回覆都會一併刪除，且<strong className="text-foreground">無法復原</strong>。
+          </>
+        }
+        confirmLabel={pending ? "刪除中…" : "確定刪除"}
+        pending={pending}
+        onConfirm={onDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }
