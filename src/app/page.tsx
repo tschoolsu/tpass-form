@@ -41,6 +41,7 @@ export default async function HomePage({
     <>
       <Header
         isLoggedIn={isLoggedIn}
+        userEmail={session?.email ?? null}
         loginUrl={authConfig.loginUrl}
         logoutUrl={authConfig.logoutUrl}
         portalUrl={authConfig.portalUrl}

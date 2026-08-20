@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Header } from "@/components/common/Header";
+import { IdentityBar } from "@/components/common/IdentityBar";
 import { FormFiller } from "@/components/fill/FormFiller";
 import { QuizFiller } from "@/components/quiz/QuizFiller";
 import { getSession } from "@/lib/tpass-auth";
@@ -10,11 +11,22 @@ import { hasQuizSkin } from "@/lib/quiz/skins";
 import { getDraft } from "@/lib/response-draft";
 import { IDENTITY_FIELD_LABELS } from "@/lib/survey-schema";
 
-function Shell({ children, isLoggedIn, admin }: { children: React.ReactNode; isLoggedIn: boolean; admin: boolean }) {
+function Shell({
+  children,
+  isLoggedIn,
+  admin,
+  userEmail,
+}: {
+  children: React.ReactNode;
+  isLoggedIn: boolean;
+  admin: boolean;
+  userEmail?: string | null;
+}) {
   return (
     <>
       <Header
         isLoggedIn={isLoggedIn}
+        userEmail={userEmail}
         loginUrl={authConfig.loginUrl}
         logoutUrl={authConfig.logoutUrl}
         portalUrl={authConfig.portalUrl}
@@ -52,7 +64,7 @@ export default async function FillPage({
 
   if (!form || form.status === "draft") {
     return (
-      <Shell isLoggedIn={!!session} admin={admin}>
+      <Shell isLoggedIn={!!session} admin={admin} userEmail={session?.email}>
         <Notice title="找不到這份問卷" body="連結可能有誤，或問卷尚未發布。" />
       </Shell>
     );
@@ -60,7 +72,7 @@ export default async function FillPage({
 
   if (form.status === "closed" || !form.settings.acceptingResponses) {
     return (
-      <Shell isLoggedIn={!!session} admin={admin}>
+      <Shell isLoggedIn={!!session} admin={admin} userEmail={session?.email}>
         <Notice title="這份問卷已停止收件" body="感謝你的關注，目前無法再填寫。" />
       </Shell>
     );
@@ -86,10 +98,16 @@ export default async function FillPage({
 
   // 只能填一次的問卷：填過就不再交出填寫器。原本唯一的攔截是送出時撞 DB unique 約束，
   // 使用者得整份重填完才被擋 —— 體感就是「可以重複填答」。
+  // 「填過了」是綁在**這個帳號**上的判斷，而本服務的帳號不一定是使用者以為的那個
+  // （契約 v2 的 cookie 不跟著 portal 換帳號走），所以一定要把帳號印出來並給切換入口。
   if (await hasSubmitted(form, session.sub)) {
     return (
-      <Shell isLoggedIn admin={admin}>
-        <Notice title="你已經填過這份問卷了" body="這份問卷每個帳號只能填寫一次，感謝你的回覆。" />
+      <Shell isLoggedIn admin={admin} userEmail={session.email}>
+        <IdentityBar email={session.email} returnPath={`/f/${slug}`} />
+        <Notice
+          title="你已經填過這份問卷了"
+          body={`這份問卷每個帳號只能填寫一次。目前登入的是 ${session.email}。`}
+        />
       </Shell>
     );
   }
@@ -107,7 +125,8 @@ export default async function FillPage({
   // 少數問卷有客製特效皮（題目文字仍讀 DB，特效讀 code）；其餘一律走通用填寫器。
   if (hasQuizSkin(slug)) {
     return (
-      <Shell isLoggedIn admin={admin}>
+      <Shell isLoggedIn admin={admin} userEmail={session.email}>
+        <IdentityBar email={session.email} returnPath={`/f/${slug}`} />
         <QuizFiller
           slug={slug}
           title={form.title}
@@ -123,7 +142,8 @@ export default async function FillPage({
   }
 
   return (
-    <Shell isLoggedIn admin={admin}>
+    <Shell isLoggedIn admin={admin} userEmail={session.email}>
+      <IdentityBar email={session.email} returnPath={`/f/${slug}`} />
       <FormFiller
         slug={slug}
         formId={form.id}
