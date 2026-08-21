@@ -80,7 +80,7 @@ export function SettingsPanel({ settings, onChange }: Props) {
       <div className={cn(settings.anonymous && "opacity-40 pointer-events-none")}>
         <Label>自動記錄的身分</Label>
         <p className="mt-1 text-xs font-medium text-muted-foreground">
-          送出時由伺服器從登入身分填入（使用者無法竄改）。年級由信箱前三碼推算。
+          送出時由伺服器從登入身分填入（使用者無法竄改）。年級依 T-Pass 的入學屆別計算。
         </p>
         <div className="mt-2 flex flex-col gap-2">
           {IDENTITY_FIELDS.map((f) => (

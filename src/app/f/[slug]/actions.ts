@@ -53,7 +53,7 @@ export async function submitFormAction(
   if (!anonymous) {
     if (identityFields.includes("name")) stamp.respondentName = session.name;
     if (identityFields.includes("email")) stamp.respondentEmail = session.email;
-    if (identityFields.includes("grade")) stamp.respondentGrade = deriveGrade(session.email);
+    if (identityFields.includes("grade")) stamp.respondentGrade = deriveGrade(session);
   }
 
   // 防重複 key（與身分顯示分離）：
