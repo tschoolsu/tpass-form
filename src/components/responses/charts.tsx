@@ -18,15 +18,17 @@ const fmtPct = (pct: number) => `${pct.toFixed(pct % 1 === 0 ? 0 : 1)}%`;
 // ── 環圈圖（單選 / 下拉）────────────────────────────────────────────
 // pathLength=100 讓 dasharray 直接吃百分比，不用算周長。
 export function DonutChart({ slices, size = 168 }: { slices: Slice[]; size?: number }) {
-  const shown = slices.filter((s) => s.count > 0);
   const R = 15.915; // 半徑；配 pathLength=100
   const W = 9; // 圈厚
-  // start = 前面所有切片累計的百分比（切片數很少，不必為了 O(n) 去改成可變累加）。
-  const arcs = shown.map((s, i) => ({
-    s,
-    i,
-    start: shown.slice(0, i).reduce((acc, x) => acc + x.pct, 0),
-  }));
+  // i 是「過濾前」的原始 index，顏色綁選項本身，才會跟 DonutLegend 對得上；
+  // start 只累計畫得出來的切片（切片數很少，不必為了 O(n) 去改成可變累加）。
+  const arcs = slices
+    .map((s, i) => ({ s, i }))
+    .filter(({ s }) => s.count > 0)
+    .map((a, k, drawn) => ({
+      ...a,
+      start: drawn.slice(0, k).reduce((acc, x) => acc + x.s.pct, 0),
+    }));
 
   const boundary = (pct: number) => {
     const a = ((pct / 100) * 360 - 90) * (Math.PI / 180);
