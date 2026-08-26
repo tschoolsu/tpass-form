@@ -45,6 +45,24 @@ export const QUESTION_TYPE_LABELS: Record<QType, string> = {
 export const GOTO_END = "END" as const;
 const gotoSchema = z.string().min(1); // 段 id 或 "END"
 
+// ── 說明欄插圖 ────────────────────────────────────────────────────────
+// 圖片本體存 FormAsset（DB + 物件儲存），定義裡只留 id 參照。
+// alt 一欄兩用：畫面上是圖說，讀螢幕時是替代文字。
+export const imageRefSchema = z.object({
+  id: z.string().min(1), // FormAsset.id
+  alt: z.string().default(""),
+  // 尺寸在定義裡複製一份：渲染時就能給 <img> 固定長寬比，不必為了排版回查 DB。
+  // optional 是為了讓手工或舊資料也能過。
+  w: z.number().int().positive().optional(),
+  h: z.number().int().positive().optional(),
+});
+export type ImageRef = z.infer<typeof imageRefSchema>;
+
+export const MAX_IMAGES_PER_FIELD = 6;
+
+// 四處說明欄共用同一個欄位形狀，別各自長一套。
+const imagesField = () => z.array(imageRefSchema).max(MAX_IMAGES_PER_FIELD).default([]);
+
 export const optionSchema = z.object({
   id: z.string().min(1),
   label: z.string(),
@@ -66,6 +84,7 @@ export const questionBlockSchema = z.object({
   type: qTypeSchema,
   title: z.string(),
   description: z.string().optional(),
+  images: imagesField(),
   required: z.boolean().default(false),
   // 選擇題
   options: z.array(optionSchema).optional(),
@@ -101,6 +120,7 @@ export const sectionBlockSchema = z.object({
   id: z.string().min(1),
   title: z.string().optional(),
   description: z.string().optional(),
+  images: imagesField(),
   defaultNext: z.union([z.literal("NEXT"), z.literal("END"), z.string()]).default("NEXT"),
 });
 export type SectionBlock = z.infer<typeof sectionBlockSchema>;
@@ -110,7 +130,7 @@ export const textBlockSchema = z.object({
   id: z.string().min(1),
   heading: z.string().optional(),
   body: z.string().optional(),
-  imageKey: z.string().optional(),
+  images: imagesField(),
 });
 export type TextBlock = z.infer<typeof textBlockSchema>;
 
@@ -142,7 +162,7 @@ export const formSettingsSchema = z.object({
   theme: z
     .object({ tone: toneSchema.default("violet") })
     .default({ tone: "violet" }),
-  coverImageKey: z.string().nullable().optional(),
+  images: imagesField(), // 問卷標題下那段說明的插圖
   acceptingResponses: z.boolean().default(true),
   oneResponsePerUser: z.boolean().default(false),
 });
@@ -155,6 +175,7 @@ export interface Section {
   id: string;
   title?: string;
   description?: string;
+  images: ImageRef[];
   defaultNext: string; // "NEXT" | "END" | sectionId
   blocks: Array<QuestionBlock | TextBlock>;
 }
@@ -162,7 +183,12 @@ export interface Section {
 // 把有序 blocks 依 section marker 切成段；第一段為隱含的 __start__。
 export function getSections(def: FormDefinition): Section[] {
   const sections: Section[] = [];
-  let current: Section = { id: START_SECTION_ID, defaultNext: "NEXT", blocks: [] };
+  let current: Section = {
+    id: START_SECTION_ID,
+    defaultNext: "NEXT",
+    images: [],
+    blocks: [],
+  };
   for (const b of def.blocks) {
     if (b.kind === "section") {
       sections.push(current);
@@ -170,6 +196,7 @@ export function getSections(def: FormDefinition): Section[] {
         id: b.id,
         title: b.title,
         description: b.description,
+        images: b.images ?? [],
         defaultNext: b.defaultNext ?? "NEXT",
         blocks: [],
       };
@@ -215,6 +242,7 @@ export function createQuestion(type: QType): QuestionBlock {
     id: newId("q"),
     type,
     title: "",
+    images: [],
     required: false,
   };
   switch (type) {
@@ -241,11 +269,11 @@ export function createQuestion(type: QType): QuestionBlock {
 }
 
 export function createSection(): SectionBlock {
-  return { kind: "section", id: newId("s"), title: "新區段", defaultNext: "NEXT" };
+  return { kind: "section", id: newId("s"), title: "新區段", images: [], defaultNext: "NEXT" };
 }
 
 export function createText(): TextBlock {
-  return { kind: "text", id: newId("t"), heading: "說明標題", body: "" };
+  return { kind: "text", id: newId("t"), heading: "說明標題", body: "", images: [] };
 }
 
 export function emptyForm(): FormDefinition {

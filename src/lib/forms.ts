@@ -6,6 +6,7 @@ import type { Form } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { anonKeyFor } from "@/lib/anon-key";
 import { deleteObject } from "@/lib/storage";
+import { gcFormAssets, purgeFormAssets } from "@/lib/form-assets";
 import type { ResponseRecord } from "@/lib/response-stats";
 import type { UploadedFile } from "@/components/fill/QuestionRenderer";
 import {
@@ -152,6 +153,22 @@ export async function saveDraft(
     if (exists) throw new ConflictError();
     throw new Error("not found");
   }
+
+  // 存檔＝定義的最新狀態，正好是判斷「哪些插圖沒人引用」的時機。
+  // 兩者都在 patch 裡才做——少一邊就算不出完整的引用集，寧可不刪。
+  // best-effort：回收失敗只是留下垃圾檔，不該把已經成功的存檔變成失敗。
+  if (patch.definition !== undefined && patch.settings !== undefined) {
+    try {
+      await gcFormAssets(
+        id,
+        formDefinitionSchema.parse(patch.definition),
+        formSettingsSchema.parse(patch.settings),
+      );
+    } catch (e) {
+      console.error("[forms] gcFormAssets failed", id, e);
+    }
+  }
+
   return expectedVersion + 1;
 }
 
@@ -250,5 +267,7 @@ export function collectUploadIds(answers: unknown): string[] {
 }
 
 export async function deleteForm(id: string): Promise<void> {
+  // 說明欄插圖的 DB row 靠 onDelete: Cascade 走，但儲存體沒有 cascade，得先自己清。
+  await purgeFormAssets(id);
   await prisma.form.delete({ where: { id } });
 }

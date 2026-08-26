@@ -5,6 +5,7 @@ import * as React from "react";
 import { Upload, X } from "lucide-react";
 import type { QuestionBlock } from "@/lib/survey-schema";
 import { Input, Textarea, Select, cn } from "@/components/ui/primitives";
+import { DescriptionImages } from "@/components/common/DescriptionImages";
 
 export interface UploadedFile {
   id: string;
@@ -32,6 +33,7 @@ export function QuestionRenderer({ question: q, value, onChange, error, formId }
       {q.description && (
         <p className="mt-1 text-sm font-medium text-muted-foreground">{q.description}</p>
       )}
+      <DescriptionImages images={q.images} />
       <div className="mt-3">
         <Field q={q} value={value} onChange={onChange} readOnly={readOnly} formId={formId} />
       </div>

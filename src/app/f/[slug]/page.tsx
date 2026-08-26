@@ -149,6 +149,7 @@ export default async function FillPage({
         formId={form.id}
         title={form.title}
         description={form.description}
+        descriptionImages={form.settings.images}
         definition={form.definition}
         tone={form.settings.theme.tone}
         identityNotice={identityNotice}

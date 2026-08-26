@@ -4,6 +4,7 @@ import * as React from "react";
 import { CheckCircle2, ArrowLeft, ArrowRight, Send } from "lucide-react";
 import {
   type FormDefinition,
+  type ImageRef,
   type Tone,
   getSections,
   questionsOf,
@@ -13,6 +14,7 @@ import {
 import { validateValue, type AnswerMap } from "@/lib/answers";
 import { QuestionRenderer } from "@/components/fill/QuestionRenderer";
 import { Button, cn } from "@/components/ui/primitives";
+import { DescriptionImages } from "@/components/common/DescriptionImages";
 import { submitFormAction, type SubmitResult } from "@/app/f/[slug]/actions";
 import { useDraftAutosave } from "@/components/fill/useDraftAutosave";
 import { DraftBar } from "@/components/fill/DraftBar";
@@ -22,6 +24,7 @@ interface Props {
   formId: string;
   title: string;
   description: string | null;
+  descriptionImages: ImageRef[];
   definition: FormDefinition;
   tone: Tone;
   identityNotice: string | null;
@@ -44,6 +47,7 @@ export function FormFiller({
   formId,
   title,
   description,
+  descriptionImages,
   definition,
   tone,
   identityNotice,
@@ -152,6 +156,7 @@ export function FormFiller({
         {description && (
           <p className="mt-2 font-medium text-foreground/80 whitespace-pre-wrap">{description}</p>
         )}
+        <DescriptionImages images={descriptionImages} />
         {identityNotice && (
           <p className="mt-3 inline-block rounded-md border-2 border-foreground bg-card px-2 py-1 font-mono text-[11px] font-bold">
             {identityNotice}
@@ -166,7 +171,8 @@ export function FormFiller({
       )}
 
       {/* 區段標題 */}
-      {section.id !== START_SECTION_ID && (section.title || section.description) && (
+      {section.id !== START_SECTION_ID &&
+        (section.title || section.description || section.images.length > 0) && (
         <div className="rounded-2xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0_0_var(--color-foreground)]">
           {section.title && <h2 className="font-extrabold text-lg">{section.title}</h2>}
           {section.description && (
@@ -174,6 +180,7 @@ export function FormFiller({
               {section.description}
             </p>
           )}
+          <DescriptionImages images={section.images} />
         </div>
       )}
 
@@ -203,6 +210,7 @@ export function FormFiller({
                 {block.body}
               </p>
             )}
+            <DescriptionImages images={block.images} />
           </div>
         ),
       )}

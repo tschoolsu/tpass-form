@@ -10,14 +10,16 @@ import {
 } from "@/lib/survey-schema";
 import { Input, Select, Switch, Badge, Button, Label } from "@/components/ui/primitives";
 import { QuestionRenderer } from "@/components/fill/QuestionRenderer";
+import { ImageAttachments } from "./ImageAttachments";
 
 interface Props {
+  formId: string;
   block: QuestionBlock;
   sections: Array<{ id: string; title: string }>;
   onChange: (next: QuestionBlock) => void;
 }
 
-export function QuestionEditor({ block, sections, onChange }: Props) {
+export function QuestionEditor({ formId, block, sections, onChange }: Props) {
   const set = (patch: Partial<QuestionBlock>) => onChange({ ...block, ...patch });
   const hasOptions =
     block.type === "single_choice" ||
@@ -53,6 +55,11 @@ export function QuestionEditor({ block, sections, onChange }: Props) {
         placeholder="補充說明（選填）"
         className="text-sm"
         onChange={(e) => set({ description: e.target.value })}
+      />
+      <ImageAttachments
+        formId={formId}
+        images={block.images}
+        onChange={(images) => set({ images })}
       />
 
       {/* 型別專屬設定 */}

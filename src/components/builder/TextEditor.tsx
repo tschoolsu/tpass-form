@@ -2,13 +2,15 @@
 
 import type { TextBlock } from "@/lib/survey-schema";
 import { Input, Textarea, Badge } from "@/components/ui/primitives";
+import { ImageAttachments } from "./ImageAttachments";
 
 interface Props {
+  formId: string;
   block: TextBlock;
   onChange: (next: TextBlock) => void;
 }
 
-export function TextEditor({ block, onChange }: Props) {
+export function TextEditor({ formId, block, onChange }: Props) {
   const set = (patch: Partial<TextBlock>) => onChange({ ...block, ...patch });
   return (
     <div className="flex flex-col gap-3">
@@ -23,6 +25,11 @@ export function TextEditor({ block, onChange }: Props) {
         value={block.body ?? ""}
         placeholder="說明內容（選填）"
         onChange={(e) => set({ body: e.target.value })}
+      />
+      <ImageAttachments
+        formId={formId}
+        images={block.images}
+        onChange={(images) => set({ images })}
       />
     </div>
   );

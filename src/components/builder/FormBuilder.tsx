@@ -253,6 +253,7 @@ export function FormBuilder(props: Props) {
                 {def.blocks.map((block) => (
                   <SortableBlock
                     key={block.id}
+                    formId={props.id}
                     block={block}
                     sections={sections}
                     onChange={updateBlock}
@@ -281,7 +282,7 @@ export function FormBuilder(props: Props) {
         {/* 側欄：設定 + 發布 */}
         <aside className="lg:w-80 shrink-0 flex flex-col gap-4">
           <div className="rounded-2xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0_0_var(--color-foreground)]">
-            <SettingsPanel settings={settings} onChange={setSettings} />
+            <SettingsPanel formId={props.id} settings={settings} onChange={setSettings} />
           </div>
 
           <div className="rounded-2xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0_0_var(--color-foreground)] flex flex-col gap-3">

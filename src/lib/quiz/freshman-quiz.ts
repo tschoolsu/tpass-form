@@ -23,6 +23,7 @@ function q(
     id,
     type: "single_choice",
     title,
+    images: [],
     required: true,
     options: options.map(([oid, label]) => ({ id: oid, label })),
   };
@@ -109,6 +110,7 @@ export const QUIZ_SETTINGS: FormSettings = {
   anonymous: false,
   identityFields: ["name", "email", "grade"],
   theme: { tone: "violet" },
+  images: [],
   acceptingResponses: true,
   oneResponsePerUser: true,
 };

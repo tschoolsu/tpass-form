@@ -27,6 +27,7 @@ model Form {
   publishedAt DateTime?
   responses   Response[]
   drafts      ResponseDraft[]
+  assets      FormAsset[]
 
   @@index([status])
   @@index([ownerSub])
@@ -77,6 +78,25 @@ model Upload {
   size        Int
   uploaderSub String
   createdAt   DateTime @default(now())
+
+  @@index([formId])
+}
+
+// 說明欄的插圖：問卷「內容」的一部分，由建構者上傳，任何登入者都看得到。
+// 刻意不跟 Upload 共用一張表 —— Upload 是填寫者的回覆附件（個資，只有問卷擁有者/超管能下載），
+// 兩者的授權方向相反，混在一起只會讓讀取端長出一堆 if。
+// width/height 存下來是給 <img> 固定長寬比，避免圖載入時卡片跳動。
+model FormAsset {
+  id         String   @id @default(cuid())
+  formId     String
+  form       Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  storageKey String
+  mime       String // 一律 image/webp（上傳時就轉好）
+  width      Int
+  height     Int
+  size       Int
+  createdBy  String // 上傳者 JWT sub
+  createdAt  DateTime @default(now())
 
   @@index([formId])
 }

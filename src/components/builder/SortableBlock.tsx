@@ -9,6 +9,7 @@ import { SectionEditor } from "./SectionEditor";
 import { TextEditor } from "./TextEditor";
 
 interface Props {
+  formId: string;
   block: Block;
   sections: Array<{ id: string; title: string }>;
   onChange: (next: Block) => void;
@@ -16,7 +17,14 @@ interface Props {
   onDelete: () => void;
 }
 
-export function SortableBlock({ block, sections, onChange, onDuplicate, onDelete }: Props) {
+export function SortableBlock({
+  formId,
+  block,
+  sections,
+  onChange,
+  onDuplicate,
+  onDelete,
+}: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id });
 
@@ -64,6 +72,7 @@ export function SortableBlock({ block, sections, onChange, onDuplicate, onDelete
 
       {block.kind === "question" && (
         <QuestionEditor
+          formId={formId}
           block={block as QuestionBlock}
           sections={sections}
           onChange={onChange}
@@ -71,13 +80,14 @@ export function SortableBlock({ block, sections, onChange, onDuplicate, onDelete
       )}
       {block.kind === "section" && (
         <SectionEditor
+          formId={formId}
           block={block as SectionBlock}
           sections={sections}
           onChange={onChange}
         />
       )}
       {block.kind === "text" && (
-        <TextEditor block={block as TextBlock} onChange={onChange} />
+        <TextEditor formId={formId} block={block as TextBlock} onChange={onChange} />
       )}
     </div>
   );

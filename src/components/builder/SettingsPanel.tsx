@@ -9,8 +9,10 @@ import {
   type Tone,
 } from "@/lib/survey-schema";
 import { Switch, Label, cn } from "@/components/ui/primitives";
+import { ImageAttachments } from "./ImageAttachments";
 
 interface Props {
+  formId: string;
   settings: FormSettings;
   onChange: (next: FormSettings) => void;
 }
@@ -23,7 +25,7 @@ const TONE_SWATCH: Record<Tone, string> = {
   rose: "bg-tone-rose-badge",
 };
 
-export function SettingsPanel({ settings, onChange }: Props) {
+export function SettingsPanel({ formId, settings, onChange }: Props) {
   const set = (patch: Partial<FormSettings>) => onChange({ ...settings, ...patch });
 
   const toggleIdentity = (f: IdentityField) => {
@@ -38,6 +40,19 @@ export function SettingsPanel({ settings, onChange }: Props) {
   return (
     <div className="flex flex-col gap-5">
       <h2 className="font-extrabold text-lg">表單設定</h2>
+
+      {/* 問卷說明的插圖（圖會出現在最上方那張抬頭卡片裡）*/}
+      <div>
+        <Label>問卷說明的圖片</Label>
+        <p className="mt-1 mb-2 text-xs font-medium text-muted-foreground">
+          放在標題與說明文字下方，每位填寫者一進來就看得到。
+        </p>
+        <ImageAttachments
+          formId={formId}
+          images={settings.images}
+          onChange={(images) => set({ images })}
+        />
+      </div>
 
       {/* 主題色 */}
       <div>
