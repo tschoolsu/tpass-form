@@ -61,5 +61,6 @@ pnpm exec tsc --noEmit
   只有在 `!isLoggedIn` 時才採信，不能拿來判斷登入狀態。
 - 「誰能開問卷」auth 不管，全在 `src/config/admin.ts` 的消費端白名單（env 種子 ∪ DB）。
 - 表單定義 / 設定存 jsonb（`src/lib/survey-schema.ts` 為單一真相，建構與填寫共用）。
-- 檔案儲存 `src/lib/storage.ts` 預設 `local` driver（寫 `./.uploads`，本機 demo 用）；
+- 檔案儲存 `src/lib/storage.ts` 預設 `local` driver（寫 `./data/uploads`——`data/` 是
+  ops 每日備份會打包的目錄，換路徑等於讓這些檔案沒有備份）；
   上線把 `STORAGE_DRIVER=s3` 接 Supabase Storage / S3，URL 全 env 驅動。

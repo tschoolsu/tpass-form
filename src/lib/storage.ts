@@ -1,5 +1,7 @@
 // 物件儲存抽象層（env 驅動，可換供應商）。
-//   driver=local：寫到本機 ./.uploads（本機 demo 用；serverless 不持久）。
+//   driver=local：寫到 <服務目錄>/data/uploads。路徑不是隨便挑的——deploy/backup.sh 的
+//     通用規則是「打包每個服務的 <dir>/data/」，寫在那底下才會被每日備份帶走。
+//     搬回 ./.uploads 或任何 data/ 外的位置＝這些檔案靜默地不再有備份。
 //   driver=s3   ：S3 相容（含 Supabase Storage 的 S3 endpoint）。v1 預留接口，未接 SDK 前會明確報錯。
 // 不把供應商寫死在呼叫端——上線只改 .env.local。
 import "server-only";
@@ -8,7 +10,7 @@ import path from "node:path";
 import { customAlphabet } from "nanoid";
 
 const DRIVER = process.env.STORAGE_DRIVER ?? "local";
-const LOCAL_DIR = path.join(process.cwd(), ".uploads");
+const LOCAL_DIR = path.join(process.cwd(), "data", "uploads");
 const keyId = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 20);
 
 export function newStorageKey(): string {

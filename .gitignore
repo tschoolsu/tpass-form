@@ -18,8 +18,8 @@
 # prisma generated client
 /src/generated
 
-# local file-storage driver uploads
-/.uploads
+# local file-storage driver uploads（備份看的是 data/，見 src/lib/storage.ts）
+/data
 
 # misc
 .DS_Store
