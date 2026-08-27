@@ -1,7 +1,7 @@
 // 檔案上傳端點：填寫者上傳前先打這裡拿 upload id，再把 id 帶進答案。
 // 一律驗 session、檢查目標題確實是該問卷的 file_upload 題、擋超大檔。
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/tpass-auth";
+import { tpass } from "@/config/auth";
 import { prisma } from "@/lib/db";
 import { formDefinitionSchema, formSettingsSchema } from "@/lib/survey-schema";
 import { newStorageKey, putObject } from "@/lib/storage";
@@ -24,7 +24,7 @@ function mimeAllowed(accept: string[], mime: string, filename: string): boolean 
 }
 
 export async function POST(request: Request) {
-  const session = await getSession();
+  const session = await tpass.getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }

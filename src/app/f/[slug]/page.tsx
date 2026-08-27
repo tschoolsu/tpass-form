@@ -3,10 +3,9 @@ import { Header } from "@/components/common/Header";
 import { IdentityBar } from "@/components/common/IdentityBar";
 import { FormFiller } from "@/components/fill/FormFiller";
 import { QuizFiller } from "@/components/quiz/QuizFiller";
-import { getSession } from "@/lib/tpass-auth";
+import { tpass, authConfig, loginUrlFor } from "@/config/auth";
 import { getPublicForm, hasSubmitted } from "@/lib/forms";
 import { isAdmin } from "@/config/admin";
-import { authConfig, loginUrlFor } from "@/config/auth";
 import { hasQuizSkin } from "@/lib/quiz/skins";
 import { getDraft } from "@/lib/response-draft";
 import { IDENTITY_FIELD_LABELS } from "@/lib/survey-schema";
@@ -57,7 +56,7 @@ export default async function FillPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const session = await getSession();
+  const session = await tpass.getSession();
   const form = await getPublicForm(slug);
 
   const admin = isAdmin(session);

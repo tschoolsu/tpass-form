@@ -1,6 +1,6 @@
 // CSV 匯出（給愛用試算表的幹部）。DB 才是真相來源，這只是匯出鏡像。
 import { NextResponse, type NextRequest } from "next/server";
-import { getSession } from "@/lib/tpass-auth";
+import { tpass } from "@/config/auth";
 import { isAdmin } from "@/config/admin";
 import { canReadResponses } from "@/lib/guard";
 import { getForm, listResponses } from "@/lib/forms";
@@ -12,7 +12,7 @@ function csvCell(s: string): string {
 }
 
 export async function GET(_req: NextRequest, ctx: RouteContext<"/api/forms/[id]/export">) {
-  const session = await getSession();
+  const session = await tpass.getSession();
   if (!session || !isAdmin(session)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }

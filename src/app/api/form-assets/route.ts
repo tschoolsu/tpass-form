@@ -1,7 +1,7 @@
 // 說明欄插圖上傳。建構者專用——與 /api/upload（填寫者的回覆附件）是兩條不同的路，
 // 授權方向相反，別合併。
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/tpass-auth";
+import { tpass } from "@/config/auth";
 import { isAdmin } from "@/config/admin";
 import { prisma } from "@/lib/db";
 import { newStorageKey, putObject } from "@/lib/storage";
@@ -14,7 +14,7 @@ import {
 
 export async function POST(request: Request) {
   // 問卷編輯是全 admin 共管（同 saveFormAction），所以這裡只驗 admin，不比對 ownerSub。
-  const session = await getSession();
+  const session = await tpass.getSession();
   if (!session) return NextResponse.json({ error: "請先登入。" }, { status: 401 });
   if (!isAdmin(session)) return NextResponse.json({ error: "沒有權限。" }, { status: 403 });
 

@@ -4,9 +4,8 @@ import { redirect } from "next/navigation";
 import { ClipboardList, ArrowUpRight } from "lucide-react";
 import { Header } from "@/components/common/Header";
 import { CopyLinkButton } from "@/components/common/CopyLinkButton";
-import { getSession } from "@/lib/tpass-auth";
+import { tpass, authConfig, loginUrlFor } from "@/config/auth";
 import { isAdmin } from "@/config/admin";
-import { authConfig, loginUrlFor } from "@/config/auth";
 import { listPublishedForms } from "@/lib/forms";
 import { type Tone } from "@/lib/survey-schema";
 
@@ -23,7 +22,7 @@ export default async function HomePage({
 }: {
   searchParams: Promise<{ logout?: string }>;
 }) {
-  const session = await getSession();
+  const session = await tpass.getSession();
   const isLoggedIn = session !== null;
   // logout=1 只是 auth 導回來的畫面提示，不是憑證：只有在 session 確實無效時才採信。
   const { logout } = await searchParams;

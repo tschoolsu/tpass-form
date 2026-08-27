@@ -1,15 +1,17 @@
 // tpass-form（consumer）SSO 設定中心。只讀 env，集中管理「對接 auth 所需的最少資訊」。
 // 邊界：只需要 JWKS 公鑰來源與幾個 URL，絕不碰 auth 私鑰 / arctic / OAuth。
+//
+// 驗章本體在套件 tpass-auth-js（C1，2026-08-27）——這裡只負責把 env 綁上去。
+// 要改驗章邏輯就去那個 repo 改，不要在這裡復活一份手抄副本。
 import "server-only";
+import { configFromEnv, createTpassNextAuth } from "tpass-auth-js/next";
 
+// SSO 那六顆 env 的必填檢查在套件裡（缺了直接 throw）。
+export const tpass = createTpassNextAuth(configFromEnv("FORM_SELF_URL"));
+
+// 本服務自己的必填 env（不屬於 SSO 合約，所以套件不管）。
 const REQUIRED = [
-  "AUTH_JWKS_URL",
-  "AUTH_AUTHORIZE_URL",
-  "AUTH_LOGOUT_URL",
-  "FORM_SELF_URL",
   "PORTAL_URL",
-  "TPASS_SERVICE_ID",
-  "JWT_ISSUER",
   // 匿名回覆去識別化的 HMAC secret：不設就直接拒絕啟動（fail closed）。
   // 空值 = 匿名雜湊可被已知 sub 清單暴力反解，匿名承諾形同虛設（安全審查 M1）。
   "ANON_HASH_SECRET",
@@ -22,49 +24,23 @@ if (missing.length > 0) {
   );
 }
 
-const self = process.env.FORM_SELF_URL!;
-const serviceId = process.env.TPASS_SERVICE_ID!;
-
 // 登入回跳路徑可帶站內路徑（例如剛要填的那份問卷），組成 authorize 入口（契約 v2）。
 export function loginUrlFor(returnPath = "/"): string {
-  const u = new URL(process.env.AUTH_AUTHORIZE_URL!);
-  u.searchParams.set("service", serviceId);
-  u.searchParams.set("redirect_uri", `${self}/api/auth/callback`);
-  u.searchParams.set("next", returnPath);
-  return u.toString();
+  return tpass.loginUrl(returnPath);
 }
 
-// /denied 頁（Phase 6 ban 攔截用）：選填 env，未設就由 AUTH_AUTHORIZE_URL 的 origin 推導
-// ——auth 固定把它掛在自己網域的 /denied，不值得為此多開一顆必填 env。
-function deniedBaseUrl(): string {
-  return (
-    process.env.AUTH_DENIED_URL ||
-    `${new URL(process.env.AUTH_AUTHORIZE_URL!).origin}/denied`
-  );
-}
-
-// reason 絕不放進這裡的 query string（auth 的 /denied 自己憑 session 在 server side 重查）。
+// reason 絕不放進 query string（auth 的 /denied 自己憑 session 在 server side 重查）。
 export function deniedUrlFor(): string {
-  const u = new URL(deniedBaseUrl());
-  u.searchParams.set("service", serviceId);
-  return u.toString();
+  return tpass.deniedUrl();
 }
 
 export const authConfig = {
-  jwksUrl: process.env.AUTH_JWKS_URL!,
-  loginUrl: loginUrlFor("/"),
+  loginUrl: tpass.loginUrl("/"),
   // 登出走自己的 route：先清自己的 cookie，再鏈到 auth 清登入態。
-  logoutUrl: `${self}/api/auth/logout`,
-  authLogoutUrl: process.env.AUTH_LOGOUT_URL!,
-  selfUrl: self,
-  serviceId,
+  logoutUrl: tpass.logoutUrl,
+  selfUrl: tpass.selfUrl,
+  serviceId: tpass.serviceId,
   // 回門戶大廳的網址（navbar 按鈕用）。env 驅動，絕不寫死網域。
   portalUrl: process.env.PORTAL_URL!,
-  issuer: process.env.JWT_ISSUER!,
-  // v2：本服務專屬 audience——別的服務的 token 在這裡驗不過（爆炸半徑隔離）。
-  serviceAudience: `tpass:${serviceId}`,
-  // v2：本服務自己的 host-only cookie（不設 Domain，別的子網域收不到）。
-  ownCookieName: "tpass_token",
-  cookieSecure: self.startsWith("https://"),
   anonHashSecret: process.env.ANON_HASH_SECRET!,
 } as const;

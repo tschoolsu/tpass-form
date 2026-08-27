@@ -1,13 +1,13 @@
 // 下載上傳檔：回覆附件屬個資，只開放「該問卷建立者或超管」（安全審查 M2）。
 import { NextResponse, type NextRequest } from "next/server";
-import { getSession } from "@/lib/tpass-auth";
+import { tpass } from "@/config/auth";
 import { isAdmin } from "@/config/admin";
 import { canReadResponses } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { getObject } from "@/lib/storage";
 
 export async function GET(_req: NextRequest, ctx: RouteContext<"/api/files/[id]">) {
-  const session = await getSession();
+  const session = await tpass.getSession();
   if (!session || !isAdmin(session)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
