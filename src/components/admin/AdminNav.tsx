@@ -3,13 +3,14 @@
 // 兩者共用同一份 ITEMS 與 active 判斷（usePathname），避免導覽在手機消失。
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Radio, type LucideIcon } from "lucide-react";
 
 type Item = { href: string; label: string; icon: LucideIcon; superAdminOnly?: boolean };
 
 // 成員名單管理已移至中央（auth 的 AUTH_GROUPS）；本服務後台不再有成員頁。
 const ITEMS: Item[] = [
   { href: "/admin", label: "我的問卷", icon: LayoutDashboard },
+  { href: "/admin/webhooks", label: "通知目標", icon: Radio },
 ];
 
 function isActive(pathname: string | null, href: string) {

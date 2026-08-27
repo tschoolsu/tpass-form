@@ -100,3 +100,23 @@ model FormAsset {
 
   @@index([formId])
 }
+
+// 通知目標（Google Chat / Discord 的 incoming webhook）。
+// 先在 /admin/webhooks 登記好幾個，之後每份問卷自己挑要不要通知——
+// 大量回覆的問卷關掉，回報表單那種「不會有人定期檢查」的才開。
+//
+// ⚠️ 通知**只送辨識資訊，不送答案內容**（同 tpass-appeals 的 A4 鐵律，見 src/lib/webhooks.ts）。
+// url 內含 secret：後台只顯示截斷版，錯誤訊息與 log 一律不得帶出完整 URL。
+model Webhook {
+  id         String    @id @default(cuid())
+  name       String
+  url        String
+  enabled    Boolean   @default(true)
+  createdBy  String // 建立者 email（稽核用）
+  createdAt  DateTime  @default(now())
+  // 最後一次投遞結果，純粹給後台排錯看（例如群組被刪掉 → 一直 404）。
+  lastStatus String?
+  lastSentAt DateTime?
+
+  @@index([createdAt])
+}

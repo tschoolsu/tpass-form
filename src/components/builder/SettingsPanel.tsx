@@ -15,6 +15,7 @@ interface Props {
   formId: string;
   settings: FormSettings;
   onChange: (next: FormSettings) => void;
+  webhooks: Array<{ id: string; name: string }>;
 }
 
 const TONE_SWATCH: Record<Tone, string> = {
@@ -25,8 +26,17 @@ const TONE_SWATCH: Record<Tone, string> = {
   rose: "bg-tone-rose-badge",
 };
 
-export function SettingsPanel({ formId, settings, onChange }: Props) {
+export function SettingsPanel({ formId, settings, onChange, webhooks }: Props) {
   const set = (patch: Partial<FormSettings>) => onChange({ ...settings, ...patch });
+
+  const toggleWebhook = (id: string) => {
+    const has = settings.webhookIds.includes(id);
+    set({
+      webhookIds: has
+        ? settings.webhookIds.filter((x) => x !== id)
+        : [...settings.webhookIds, id],
+    });
+  };
 
   const toggleIdentity = (f: IdentityField) => {
     const has = settings.identityFields.includes(f);
@@ -140,6 +150,35 @@ export function SettingsPanel({ formId, settings, onChange }: Props) {
           onChange={(v) => set({ acceptingResponses: v })}
           label="接受回覆"
         />
+      </div>
+
+      {/* 新回覆通知：預設全關。會有大量回覆的問卷開了只會洗版，
+          「不會有人定期檢查」的（例如回報表單）才值得開。 */}
+      <div className="border-t-2 border-dashed border-foreground/15 pt-4">
+        <Label>收到新回覆時通知</Label>
+        <p className="mt-1 mb-2 text-xs font-medium text-muted-foreground">
+          通知只會說「有新回覆」與填寫者是誰，<strong>不會送出答案內容</strong>。
+          目標在後台的「通知目標」頁登記。
+        </p>
+        {webhooks.length === 0 ? (
+          <p className="text-xs font-medium text-muted-foreground">
+            還沒有任何通知目標——先到後台的「通知目標」頁登記一個。
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {webhooks.map((w) => (
+              <label key={w.id} className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-[var(--color-primary)]"
+                  checked={settings.webhookIds.includes(w.id)}
+                  onChange={() => toggleWebhook(w.id)}
+                />
+                {w.name}
+              </label>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

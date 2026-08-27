@@ -56,6 +56,8 @@ interface Props {
   initialVersion: number;
   initialDefinition: FormDefinition;
   initialSettings: FormSettings;
+  // 可勾選的通知目標（/admin/webhooks 登記的啟用中項目）。刻意不帶 url——它內含 secret。
+  webhooks: Array<{ id: string; name: string }>;
 }
 
 type SaveState = "saved" | "saving" | "unsaved" | "error" | "conflict";
@@ -282,7 +284,12 @@ export function FormBuilder(props: Props) {
         {/* 側欄：設定 + 發布 */}
         <aside className="lg:w-80 shrink-0 flex flex-col gap-4">
           <div className="rounded-2xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0_0_var(--color-foreground)]">
-            <SettingsPanel formId={props.id} settings={settings} onChange={setSettings} />
+            <SettingsPanel
+              formId={props.id}
+              settings={settings}
+              onChange={setSettings}
+              webhooks={props.webhooks}
+            />
           </div>
 
           <div className="rounded-2xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0_0_var(--color-foreground)] flex flex-col gap-3">

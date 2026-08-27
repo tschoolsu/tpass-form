@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/guard";
 import { getForm } from "@/lib/forms";
+import { prisma } from "@/lib/db";
 import { authConfig } from "@/config/auth";
 import { FormBuilder } from "@/components/builder/FormBuilder";
 
@@ -16,6 +17,13 @@ export default async function EditFormPage({
 
   const publicUrl = new URL(`/f/${form.slug}`, authConfig.selfUrl).toString();
 
+  // 設定面板要勾選的通知目標。只給啟用中的，且**不把 url 傳到前端**（內含 secret）。
+  const webhooks = await prisma.webhook.findMany({
+    where: { enabled: true },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true },
+  });
+
   return (
     <FormBuilder
       id={form.id}
@@ -26,6 +34,7 @@ export default async function EditFormPage({
       initialVersion={form.version}
       initialDefinition={form.definition}
       initialSettings={form.settings}
+      webhooks={webhooks}
     />
   );
 }

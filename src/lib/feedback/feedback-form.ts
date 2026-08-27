@@ -124,4 +124,6 @@ export const FEEDBACK_SETTINGS: FormSettings = {
   acceptingResponses: true,
   // 同一個人會撞到不只一個問題，不能只准回報一次。
   oneResponsePerUser: false,
+  // 通知目標在 /admin/webhooks 登記後，到這份問卷的設定面板勾選（不寫死在 code 裡）。
+  webhookIds: [],
 };

@@ -2,8 +2,11 @@
 
 // 填寫端的 server actions（送出 / 草稿）。身分一律由伺服器從驗章後的 session 戳記，
 // client 傳的身分與草稿擁有者一概不信。
+import { after } from "next/server";
 import { Prisma } from "@prisma/client";
 import { requireSession } from "@/lib/guard";
+import { authConfig } from "@/config/auth";
+import { notifyNewResponse } from "@/lib/webhooks";
 import { anonKeyFor } from "@/lib/anon-key";
 import { prisma } from "@/lib/db";
 import { getPublicForm } from "@/lib/forms";
@@ -83,6 +86,21 @@ export async function submitFormAction(
 
   // 回覆已落地，草稿功成身退（附件已屬於這筆回覆，不能跟著刪）。
   await deleteDraft(form.id, session.sub);
+
+  // 通知排在回應之後（after）：webhook 最多要等 10 秒，填寫者不該替它站崗；
+  // 而且通知失敗絕不能讓「已經存進 DB 的回覆」看起來像送出失敗。
+  const webhookIds = form.settings.webhookIds;
+  if (webhookIds.length > 0) {
+    after(async () => {
+      await notifyNewResponse(webhookIds, {
+        formTitle: form.title,
+        responsesUrl: `${authConfig.selfUrl}/admin/forms/${form.id}/responses`,
+        // ⚠️ 只送辨識資訊，不送答案。匿名或沒收姓名 → null，通知只說「有人填了」。
+        respondent: stamp.respondentName ?? stamp.respondentEmail,
+        submittedAt: new Date(),
+      });
+    });
+  }
 
   return { ok: true };
 }

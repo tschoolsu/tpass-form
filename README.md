@@ -18,6 +18,11 @@ TSchool 數位服務平台的問卷子模組（消費端）。對標 Google 表�
 - **身分戳記**：非匿名時由伺服器從登入身分填入姓名 / 信箱 / 年級（**client 不可竄改**）；
   年級由信箱前三碼（入學民國學年度）推算，8 月跳新學年度。
 - **結果**（`/admin/forms/[id]/responses`）：逐筆檢視 + **匯出 CSV**（DB 才是真相來源，CSV 只是鏡像）。
+- **新回覆通知**（`/admin/webhooks`）：登記 Discord / Google Chat 的 incoming webhook，
+  再到每份問卷的設定面板勾選要用哪幾個（預設全關——會有大量回覆的問卷開了只會洗版；
+  「不會有人定期檢查」的回報型表單才值得開）。
+  ⚠️ 通知**只送辨識資訊，不送答案內容**（理由見 `src/lib/webhook-format.ts` 檔頭）。
+  只收 `discord.com` / `chat.googleapis.com` 的網址，其他一律擋（SSRF / 外流面）。
 - **名單管理**（`/admin/members`，超管限定）：env 種子超管 + DB UI 增刪學生會成員 email。
 
 ## 本機啟動
