@@ -22,7 +22,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:seed:quiz": "pnpm dlx tsx scripts/seed-freshman-quiz.ts"
+    "db:seed:quiz": "pnpm dlx tsx scripts/seed-freshman-quiz.ts",
+    "db:seed:feedback": "pnpm dlx tsx scripts/seed-feedback-form.ts"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"
