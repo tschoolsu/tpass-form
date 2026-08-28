@@ -61,8 +61,12 @@ async function main() {
   const ownerEmail = process.env.FEEDBACK_OWNER_EMAIL?.trim();
   if (!ownerSub || !ownerEmail) {
     throw new Error(
-      "缺 FEEDBACK_OWNER_SUB / FEEDBACK_OWNER_EMAIL。到 auth 的 /admin 找自己的 sub，再重跑：\n" +
-        "  FEEDBACK_OWNER_SUB=… FEEDBACK_OWNER_EMAIL=… pnpm db:seed:feedback",
+      "缺 FEEDBACK_OWNER_SUB / FEEDBACK_OWNER_EMAIL。\n" +
+        "  怎麼查自己的 sub：登入任一個服務 → DevTools → Application → Cookies → 複製 tpass_token，\n" +
+        "  再解出 payload 的 sub：\n" +
+        `    node -e 'console.log(JSON.parse(Buffer.from("<token>".split(".")[1],"base64url")).sub)'\n` +
+        "  （auth 的 /admin 只列 email 與權限，看不到 sub，別去那裡找。）\n" +
+        "  查到後重跑：FEEDBACK_OWNER_SUB=… FEEDBACK_OWNER_EMAIL=… pnpm db:seed:feedback",
     );
   }
 
