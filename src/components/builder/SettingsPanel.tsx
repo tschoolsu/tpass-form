@@ -179,6 +179,30 @@ export function SettingsPanel({ formId, settings, onChange, webhooks }: Props) {
             ))}
           </div>
         )}
+
+        {/* 內容外送由人決定：預設只送關鍵資訊，要連答案一起送得自己按下去。
+            只有選了通知目標才顯示——沒有目標時這個選項沒有意義。 */}
+        {settings.webhookIds.length > 0 && (
+          <div className="mt-4 rounded-xl border-2 border-foreground bg-muted p-3">
+            <Switch
+              checked={settings.webhookIncludeAnswers}
+              onChange={(v) => set({ webhookIncludeAnswers: v })}
+              label="連答案內容一起送"
+            />
+            <p className="mt-2 text-xs font-medium text-muted-foreground">
+              {settings.webhookIncludeAnswers ? (
+                <>
+                  <strong className="text-tone-orange-text">答案全文會出現在群組裡</strong>
+                  （含附件檔名；附件本身仍要進後台下載）。
+                  請確認那個群組的成員都能看這份問卷的回覆——群組成員名單不在 T-Pass 的權限管理裡，
+                  有人卸任或畢業不會自動收權。內容太長會截斷，完整版在後台。
+                </>
+              ) : (
+                <>目前只送「有新回覆 + 填寫者是誰 + 後台連結」，答案內容不會離開這個系統。</>
+              )}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

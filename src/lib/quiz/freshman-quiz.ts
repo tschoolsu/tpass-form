@@ -114,4 +114,5 @@ export const QUIZ_SETTINGS: FormSettings = {
   acceptingResponses: true,
   oneResponsePerUser: true,
   webhookIds: [],
+  webhookIncludeAnswers: false,
 };

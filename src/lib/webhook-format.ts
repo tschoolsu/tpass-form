@@ -1,11 +1,13 @@
 // 新回覆通知的「純」部分：網址檢查、遮罩、payload 組裝。
 // 刻意不依賴 server-only / prisma，這樣測試可以直接跑（真正發送在 lib/webhooks.ts）。
 //
-// ⚠️ 鐵律：通知**只送辨識資訊，不送答案內容**。
-// 理由跟 tpass-appeals 的 Discord 通知（加固計畫 A4）一樣：群組/頻道的成員名單不在
-// T-Pass 的權限模型裡——auth 的 /admin 把某人降回 default 只擋得住後台，擋不住群組；
-// 卸任、畢業都不會自動收權。而問卷回覆常含個資，匿名問卷更是承諾過「不會被看出是誰」。
-// 🚫 不要「順手」把答案摘要加回來。要看內容就點連結進後台，那裡才管得住。
+// ⚠️ 內容外送是**人的決定，不是預設**：每份問卷可以選「只送關鍵資訊」（預設）或
+// 「連答案一起送」（settings.webhookIncludeAnswers）。
+// 為什麼預設是只送關鍵資訊：通知進的那個群組，成員名單不在 T-Pass 的權限模型裡——
+// auth 的 /admin 把某人降回 default 只擋得住後台，擋不住群組；卸任、畢業都不會自動收權。
+// 問卷回覆常含個資，所以「要不要把它送出這道門」必須有人明確按下去，而不是預設就開著。
+// （tpass-appeals 的申訴通知是另一回事：那裡沒有開關，永遠不送內容——申訴的對象
+// 很可能就在那個頻道裡。不要把這裡的開關「順手」加到那邊去。）
 //
 // url 內含 secret：錯誤訊息與 log 一律不得帶出完整 URL。
 // 只收這兩家的 incoming webhook。白名單擋的是①貼錯網址②admin 帳號失守時
@@ -58,6 +60,11 @@ export function maskWebhookUrl(url: string): string {
   }
 }
 
+export interface AnswerLine {
+  title: string;
+  text: string;
+}
+
 export interface ResponseNotice {
   formTitle: string;
   // 後台那份回覆清單的完整網址（由呼叫端組，本檔不讀 env）。
@@ -65,22 +72,51 @@ export interface ResponseNotice {
   // 匿名問卷、或沒收姓名的問卷 → null，通知就只說「有人填了」。
   respondent: string | null;
   submittedAt: Date;
+  // 只有在該問卷勾了「連答案一起送」時才會有值。undefined／空陣列＝只送關鍵資訊。
+  answers?: AnswerLine[];
+}
+
+// 兩家的訊息長度上限都在四千字上下（Discord embed description 4096、Google Chat 約 4000）。
+// 超過就整包被退回，所以寧可截斷——反正完整內容在後台。
+const MAX_ANSWERS_CHARS = 3_000;
+
+function answersBlock(answers: AnswerLine[] | undefined): string | null {
+  if (!answers || answers.length === 0) return null;
+
+  const lines: string[] = [];
+  let used = 0;
+  let truncated = false;
+  for (const a of answers) {
+    const line = `• ${a.title}：${a.text || "（未填）"}`;
+    if (used + line.length > MAX_ANSWERS_CHARS) {
+      truncated = true;
+      break;
+    }
+    lines.push(line);
+    used += line.length;
+  }
+  if (truncated) lines.push("…（內容過長，其餘請至後台查看）");
+  return lines.join("\n");
 }
 
 function timeLabel(d: Date): string {
   return d.toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
 }
 
-// ⚠️ 這兩個 payload 是「不送內容」那條鐵律的實際落點，改之前先讀檔頭。
+// ⚠️ 這兩個 payload 就是「內容出不出得了這道門」的實際落點，改之前先讀檔頭。
+// answers 有值＝那份問卷的人選了「連答案一起送」；沒有值就只給關鍵資訊 + 後台連結。
 export function buildPayload(kind: WebhookKind, n: ResponseNotice): unknown {
   const who = n.respondent ?? "（匿名／未收姓名）";
+  const body = answersBlock(n.answers);
+
   if (kind === "google_chat") {
     return {
       text: [
         `📥 *${n.formTitle}* 有新回覆`,
         `填寫者：${who}`,
         `時間：${timeLabel(n.submittedAt)}`,
-        `內容不在此顯示，請至後台查看：${n.responsesUrl}`,
+        body ?? "內容不在此顯示，請至後台查看：",
+        body ? `完整內容與附件：${n.responsesUrl}` : n.responsesUrl,
       ].join("\n"),
     };
   }
@@ -91,7 +127,10 @@ export function buildPayload(kind: WebhookKind, n: ResponseNotice): unknown {
         description: [
           `**${n.formTitle}**`,
           `填寫者：${who}`,
-          `內容不在此顯示，請至後台查看：[開啟回覆清單](${n.responsesUrl})`,
+          body ?? "內容不在此顯示，請至後台查看：",
+          body
+            ? `[完整內容與附件](${n.responsesUrl})`
+            : `[開啟回覆清單](${n.responsesUrl})`,
         ].join("\n"),
         timestamp: n.submittedAt.toISOString(),
       },

@@ -72,7 +72,23 @@ async function main() {
   }
 
   const definition = buildFeedbackDefinition(services) as unknown as Prisma.InputJsonValue;
-  const settings = FEEDBACK_SETTINGS as unknown as Prisma.InputJsonValue;
+
+  // 通知設定（要送到哪些 webhook、要不要連答案一起送）是人在後台按的，
+  // seed 重跑不該把它蓋掉——沿用 DB 現有的值。
+  const existing = await prisma.form.findUnique({
+    where: { slug: FEEDBACK_SLUG },
+    select: { settings: true },
+  });
+  const prev = (existing?.settings ?? {}) as {
+    webhookIds?: string[];
+    webhookIncludeAnswers?: boolean;
+  };
+  const settings = {
+    ...FEEDBACK_SETTINGS,
+    webhookIds: prev.webhookIds ?? FEEDBACK_SETTINGS.webhookIds,
+    webhookIncludeAnswers:
+      prev.webhookIncludeAnswers ?? FEEDBACK_SETTINGS.webhookIncludeAnswers,
+  } as unknown as Prisma.InputJsonValue;
 
   const form = await prisma.form.upsert({
     where: { slug: FEEDBACK_SLUG },

@@ -21,7 +21,8 @@ TSchool 數位服務平台的問卷子模組（消費端）。對標 Google 表�
 - **新回覆通知**（`/admin/webhooks`）：登記 Discord / Google Chat 的 incoming webhook，
   再到每份問卷的設定面板勾選要用哪幾個（預設全關——會有大量回覆的問卷開了只會洗版；
   「不會有人定期檢查」的回報型表單才值得開）。
-  ⚠️ 通知**只送辨識資訊，不送答案內容**（理由見 `src/lib/webhook-format.ts` 檔頭）。
+  每份問卷再自己決定通知**只送關鍵資訊**（有新回覆／填寫者／後台連結；預設）還是
+  **連答案內容一起送**——這是人的決定，不是預設值（理由見 `src/lib/webhook-format.ts` 檔頭）。
   只收 `discord.com` / `chat.googleapis.com` 的網址，其他一律擋（SSRF / 外流面）。
 - **名單管理**（`/admin/members`，超管限定）：env 種子超管 + DB UI 增刪學生會成員 email。
 

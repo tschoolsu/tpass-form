@@ -18,7 +18,9 @@ export default async function AdminWebhooksPage() {
       <h1 className="mb-2 text-2xl font-extrabold tracking-tight">通知目標</h1>
       <p className="mb-6 font-medium text-muted-foreground">
         登記 Discord 或 Google Chat 的 incoming webhook，之後在每份問卷的「表單設定」裡勾選要用哪幾個。
-        通知<strong>只會說「有新回覆」與填寫者是誰，不會送出答案內容</strong>——要看內容請點連結進後台。
+        每份問卷可以自己決定通知<strong>只送關鍵資訊</strong>（有新回覆、填寫者是誰、後台連結；預設）
+        還是<strong>連答案內容一起送</strong>。要送內容前先確認那個群組的成員都能看那份問卷的回覆——
+        群組成員名單不在 T-Pass 的權限管理裡。
       </p>
 
       <Card className="mb-6">

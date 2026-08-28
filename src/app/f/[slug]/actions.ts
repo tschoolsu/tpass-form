@@ -7,6 +7,7 @@ import { Prisma } from "@prisma/client";
 import { requireSession } from "@/lib/guard";
 import { authConfig } from "@/config/auth";
 import { notifyNewResponse } from "@/lib/webhooks";
+import { answerToText, questionBlocks } from "@/lib/answer-format";
 import { anonKeyFor } from "@/lib/anon-key";
 import { prisma } from "@/lib/db";
 import { getPublicForm } from "@/lib/forms";
@@ -89,15 +90,24 @@ export async function submitFormAction(
 
   // 通知排在回應之後（after）：webhook 最多要等 10 秒，填寫者不該替它站崗；
   // 而且通知失敗絕不能讓「已經存進 DB 的回覆」看起來像送出失敗。
-  const webhookIds = form.settings.webhookIds;
+  const { webhookIds, webhookIncludeAnswers } = form.settings;
   if (webhookIds.length > 0) {
+    // 「連答案一起送」是這份問卷的人自己在設定面板勾的（預設關）。沒勾就只帶關鍵資訊。
+    const answerLines = webhookIncludeAnswers
+      ? questionBlocks(form.definition.blocks).map((q) => ({
+          title: q.title,
+          text: answerToText(q, answers[q.id]),
+        }))
+      : undefined;
+
     after(async () => {
       await notifyNewResponse(webhookIds, {
         formTitle: form.title,
         responsesUrl: `${authConfig.selfUrl}/admin/forms/${form.id}/responses`,
-        // ⚠️ 只送辨識資訊，不送答案。匿名或沒收姓名 → null，通知只說「有人填了」。
+        // 匿名或沒收姓名 → null，通知只說「有人填了」。
         respondent: stamp.respondentName ?? stamp.respondentEmail,
         submittedAt: new Date(),
+        answers: answerLines,
       });
     });
   }
