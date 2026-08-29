@@ -6,6 +6,7 @@ import { Upload, X } from "lucide-react";
 import type { QuestionBlock } from "@/lib/survey-schema";
 import { Input, Textarea, Select, cn } from "@/components/ui/primitives";
 import { DescriptionImages } from "@/components/common/DescriptionImages";
+import { RichText } from "@/components/common/RichText";
 
 export interface UploadedFile {
   id: string;
@@ -26,13 +27,17 @@ export function QuestionRenderer({ question: q, value, onChange, error, formId }
     <div>
       <div className="flex items-start gap-1.5">
         <span className="font-bold text-foreground">
-          {q.title || <span className="text-muted-foreground">（未命名題目）</span>}
+          {q.title ? (
+            <RichText text={q.title} />
+          ) : (
+            <span className="text-muted-foreground">（未命名題目）</span>
+          )}
         </span>
         {q.required && <span className="text-destructive font-bold">*</span>}
       </div>
       {q.description && (
         <p className="mt-1 text-sm font-medium text-muted-foreground whitespace-pre-wrap">
-          {q.description}
+          <RichText text={q.description} />
         </p>
       )}
       <DescriptionImages images={q.images} />

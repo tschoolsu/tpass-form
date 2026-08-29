@@ -20,6 +20,7 @@ import { Button, cn } from "@/components/ui/primitives";
 import { submitFormAction, type SubmitResult } from "@/app/f/[slug]/actions";
 import { useDraftAutosave } from "@/components/fill/useDraftAutosave";
 import { DraftBar } from "@/components/fill/DraftBar";
+import { RichText } from "@/components/common/RichText";
 
 const TONE_BG: Record<Tone, string> = {
   green: "bg-tone-green-bg",
@@ -209,10 +210,12 @@ export function QuizFiller({
           TONE_BG[tone],
         )}
       >
-        <h1 className="font-extrabold text-2xl sm:text-3xl tracking-tight">{title}</h1>
+        <h1 className="font-extrabold text-2xl sm:text-3xl tracking-tight">
+          <RichText text={title} />
+        </h1>
         {description && (
           <p className="mt-2 font-medium text-foreground/80 whitespace-pre-wrap">
-            {description}
+            <RichText text={description} />
           </p>
         )}
         {identityNotice && (
@@ -248,9 +251,13 @@ export function QuizFiller({
           shakeCard && !reduced && "animate-quiz-shake",
         )}
       >
-        <h2 className="font-extrabold text-lg sm:text-xl">{q.title}</h2>
+        <h2 className="font-extrabold text-lg sm:text-xl">
+          <RichText text={q.title} />
+        </h2>
         {q.description && (
-          <p className="mt-1 font-medium text-muted-foreground whitespace-pre-wrap">{q.description}</p>
+          <p className="mt-1 font-medium text-muted-foreground whitespace-pre-wrap">
+            <RichText text={q.description} />
+          </p>
         )}
 
         <div role="radiogroup" aria-label={q.title} className="mt-4 flex flex-col gap-2.5">

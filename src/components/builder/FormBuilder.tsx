@@ -244,6 +244,11 @@ export function FormBuilder(props: Props) {
               className="mt-2 border-0 shadow-none px-0 focus:shadow-none min-h-12"
               onChange={(e) => setDescription(e.target.value)}
             />
+            {/* 這個功能不寫出來沒人會知道。放一次就好，不必每個欄位都掛。 */}
+            <p className="mt-2 font-mono text-[11px] font-bold text-muted-foreground">
+              標題與說明可以換行，也支援 Markdown：**粗體** *斜體* ~~刪除線~~ `程式碼`
+              [連結文字](https://網址)。不支援 # 標題。
+            </p>
           </div>
 
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>

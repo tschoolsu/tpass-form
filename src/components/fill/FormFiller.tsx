@@ -15,6 +15,7 @@ import { validateValue, type AnswerMap } from "@/lib/answers";
 import { QuestionRenderer } from "@/components/fill/QuestionRenderer";
 import { Button, cn } from "@/components/ui/primitives";
 import { DescriptionImages } from "@/components/common/DescriptionImages";
+import { RichText } from "@/components/common/RichText";
 import { submitFormAction, type SubmitResult } from "@/app/f/[slug]/actions";
 import { useDraftAutosave } from "@/components/fill/useDraftAutosave";
 import { DraftBar } from "@/components/fill/DraftBar";
@@ -152,9 +153,13 @@ export function FormFiller({
           TONE_BG[tone],
         )}
       >
-        <h1 className="font-extrabold text-2xl sm:text-3xl tracking-tight">{title}</h1>
+        <h1 className="font-extrabold text-2xl sm:text-3xl tracking-tight">
+          <RichText text={title} />
+        </h1>
         {description && (
-          <p className="mt-2 font-medium text-foreground/80 whitespace-pre-wrap">{description}</p>
+          <p className="mt-2 font-medium text-foreground/80 whitespace-pre-wrap">
+            <RichText text={description} />
+          </p>
         )}
         <DescriptionImages images={descriptionImages} />
         {identityNotice && (
@@ -174,10 +179,14 @@ export function FormFiller({
       {section.id !== START_SECTION_ID &&
         (section.title || section.description || section.images.length > 0) && (
         <div className="rounded-2xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0_0_var(--color-foreground)]">
-          {section.title && <h2 className="font-extrabold text-lg">{section.title}</h2>}
+          {section.title && (
+            <h2 className="font-extrabold text-lg">
+              <RichText text={section.title} />
+            </h2>
+          )}
           {section.description && (
             <p className="mt-1 font-medium text-muted-foreground whitespace-pre-wrap">
-              {section.description}
+              <RichText text={section.description} />
             </p>
           )}
           <DescriptionImages images={section.images} />
@@ -204,10 +213,14 @@ export function FormFiller({
             key={block.id}
             className="rounded-2xl border-2 border-dashed border-foreground/40 bg-muted/40 p-5"
           >
-            {block.heading && <h3 className="font-extrabold">{block.heading}</h3>}
+            {block.heading && (
+              <h3 className="font-extrabold">
+                <RichText text={block.heading} />
+              </h3>
+            )}
             {block.body && (
               <p className="mt-1 font-medium text-muted-foreground whitespace-pre-wrap">
-                {block.body}
+                <RichText text={block.body} />
               </p>
             )}
             <DescriptionImages images={block.images} />
