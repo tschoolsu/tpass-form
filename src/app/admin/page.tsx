@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Plus, FileText, ArrowUpRight } from "lucide-react";
 import { requireAdmin } from "@/lib/guard";
 import { listForms, type FormStatus } from "@/lib/forms";
-import { Badge } from "@/components/ui/primitives";
+import { Badge } from "tpass-ui";
 import { createFormAction } from "@/app/admin/forms/actions";
 
 const STATUS_META: Record<FormStatus, { label: string; cls: string }> = {

@@ -3,7 +3,7 @@
 import { gradeLabel } from "@/lib/grade";
 import type { QuestionBlock } from "@/lib/survey-schema";
 import type { ResponseRecord } from "@/lib/response-stats";
-import { Badge } from "@/components/ui/primitives";
+import { Badge } from "tpass-ui";
 import { AnswerView } from "@/components/responses/AnswerView";
 
 export function SingleResponse({

@@ -1,7 +1,7 @@
 // 說明欄插圖的渲染端。四處說明（問卷 / 區段 / 說明板塊 / 題目）與建構器預覽共用同一份。
 import type { ImageRef } from "@/lib/survey-schema";
 import { assetUrl } from "@/lib/asset-refs";
-import { cn } from "@/components/ui/primitives";
+import { cn } from "tpass-ui";
 
 interface Props {
   images: ImageRef[] | undefined;

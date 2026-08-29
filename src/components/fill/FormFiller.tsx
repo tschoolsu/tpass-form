@@ -13,7 +13,7 @@ import {
 } from "@/lib/survey-schema";
 import { validateValue, type AnswerMap } from "@/lib/answers";
 import { QuestionRenderer } from "@/components/fill/QuestionRenderer";
-import { Button, cn } from "@/components/ui/primitives";
+import { Button, cn } from "tpass-ui";
 import { DescriptionImages } from "@/components/common/DescriptionImages";
 import { RichText } from "@/components/common/RichText";
 import { submitFormAction, type SubmitResult } from "@/app/f/[slug]/actions";

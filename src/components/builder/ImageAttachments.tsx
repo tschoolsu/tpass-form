@@ -6,7 +6,7 @@ import * as React from "react";
 import { ImagePlus, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { MAX_IMAGES_PER_FIELD, type ImageRef } from "@/lib/survey-schema";
 import { assetUrl } from "@/lib/asset-refs";
-import { Input, Button } from "@/components/ui/primitives";
+import { Input, Button } from "tpass-ui";
 
 interface Props {
   formId: string;

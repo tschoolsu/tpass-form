@@ -2,7 +2,7 @@
 // 手刻圖表原語（零依賴）。一律 Neobrutalism：border-2 border-foreground + 實色填充，
 // 顏色只用 globals.css 的五個 tone token（OKLCH），禁 soft shadow / hex。
 import type { Slice } from "@/lib/response-stats";
-import { cn } from "@/components/ui/primitives";
+import { cn } from "tpass-ui";
 
 const TONES = [
   "var(--color-tone-green-badge)",

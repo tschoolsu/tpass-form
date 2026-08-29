@@ -16,7 +16,7 @@ import {
   Badge,
   Button,
   Label,
-} from "@/components/ui/primitives";
+} from "tpass-ui";
 import { QuestionRenderer } from "@/components/fill/QuestionRenderer";
 import { ImageAttachments } from "./ImageAttachments";
 

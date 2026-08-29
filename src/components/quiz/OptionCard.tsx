@@ -4,7 +4,7 @@
 // 特效只覆蓋背景 / 文字色 / 字體，並在選中時附加動畫 class 與粒子。
 import * as React from "react";
 import { Check } from "lucide-react";
-import { cn } from "@/components/ui/primitives";
+import { cn } from "tpass-ui";
 import { effectOf } from "@/lib/quiz/effects";
 import { rng } from "@/lib/quiz/rand";
 import { Burst } from "@/components/quiz/Burst";

@@ -8,7 +8,7 @@ import {
   TONES,
   type Tone,
 } from "@/lib/survey-schema";
-import { Switch, Label, cn } from "@/components/ui/primitives";
+import { Switch, Label, cn } from "tpass-ui";
 import { ImageAttachments } from "./ImageAttachments";
 
 interface Props {

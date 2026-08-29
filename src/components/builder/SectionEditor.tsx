@@ -1,7 +1,7 @@
 "use client";
 
 import type { SectionBlock } from "@/lib/survey-schema";
-import { Input, Textarea, Select, Badge, Label } from "@/components/ui/primitives";
+import { Input, Textarea, Select, Badge, Label } from "tpass-ui";
 import { ImageAttachments } from "./ImageAttachments";
 
 interface Props {

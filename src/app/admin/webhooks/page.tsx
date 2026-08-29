@@ -4,7 +4,7 @@
 import { Trash2 } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { maskWebhookUrl } from "@/lib/webhook-format";
-import { Badge, Button, Card } from "@/components/ui/primitives";
+import { Badge, Button, Card } from "tpass-ui";
 import { WebhookForm, TestWebhookButton } from "@/components/admin/WebhookForm";
 import { deleteWebhookAction, toggleWebhookAction } from "./actions";
 

@@ -16,7 +16,7 @@ import { Burst } from "@/components/quiz/Burst";
 import { OptionCard } from "@/components/quiz/OptionCard";
 import { Scene } from "@/components/quiz/Scene";
 import { useReducedMotion } from "@/components/quiz/useReducedMotion";
-import { Button, cn } from "@/components/ui/primitives";
+import { Button, cn } from "tpass-ui";
 import { submitFormAction, type SubmitResult } from "@/app/f/[slug]/actions";
 import { useDraftAutosave } from "@/components/fill/useDraftAutosave";
 import { DraftBar } from "@/components/fill/DraftBar";

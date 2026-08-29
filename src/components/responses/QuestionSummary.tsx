@@ -3,7 +3,7 @@
 import * as React from "react";
 import { QUESTION_TYPE_LABELS, type QuestionBlock } from "@/lib/survey-schema";
 import type { QuestionStats } from "@/lib/response-stats";
-import { Badge, Button, cn } from "@/components/ui/primitives";
+import { Badge, Button, cn } from "tpass-ui";
 import { FileLinks } from "@/components/responses/AnswerView";
 import { BarList, DonutChart, DonutLegend, GridMatrix, ScaleHistogram } from "@/components/responses/charts";
 

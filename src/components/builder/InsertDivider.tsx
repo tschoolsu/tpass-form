@@ -5,7 +5,7 @@
 import * as React from "react";
 import { CircleHelp, Plus, SquareSplitVertical, Type as TypeIcon, X } from "lucide-react";
 import { type Block, createQuestion, createSection, createText } from "@/lib/survey-schema";
-import { Button } from "@/components/ui/primitives";
+import { Button } from "tpass-ui";
 
 export function InsertDivider({ onInsert }: { onInsert: (b: Block) => void }) {
   const [open, setOpen] = React.useState(false);

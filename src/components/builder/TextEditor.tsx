@@ -1,7 +1,7 @@
 "use client";
 
 import type { TextBlock } from "@/lib/survey-schema";
-import { Input, Textarea, Badge } from "@/components/ui/primitives";
+import { Input, Textarea, Badge } from "tpass-ui";
 import { ImageAttachments } from "./ImageAttachments";
 
 interface Props {

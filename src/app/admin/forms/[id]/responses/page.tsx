@@ -4,7 +4,7 @@ import { ArrowLeft, Download, Inbox } from "lucide-react";
 import { canReadResponses, requireAdmin } from "@/lib/guard";
 import { getForm, listResponses } from "@/lib/forms";
 import { questionBlocks } from "@/lib/answer-format";
-import { Badge } from "@/components/ui/primitives";
+import { Badge } from "tpass-ui";
 import { ResponsesView } from "@/components/responses/ResponsesView";
 
 export default async function ResponsesPage({

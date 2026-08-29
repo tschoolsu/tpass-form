@@ -34,12 +34,11 @@ import {
   newId,
 } from "@/lib/survey-schema";
 import type { FormStatus } from "@/lib/forms";
-import { Button, Input, Textarea, Badge } from "@/components/ui/primitives";
+import { Button, Input, Textarea, Badge, ConfirmDialog } from "tpass-ui";
 import { SortableBlock } from "./SortableBlock";
 import { InsertDivider } from "./InsertDivider";
 import { SettingsPanel } from "./SettingsPanel";
 import { CopyLinkButton } from "@/components/common/CopyLinkButton";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   saveFormAction,
   publishFormAction,

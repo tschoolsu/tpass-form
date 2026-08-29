@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { BarChart3, ChevronLeft, ChevronRight, List, Search, Trash2, User } from "lucide-react";
 import type { QuestionBlock } from "@/lib/survey-schema";
 import { computeStats, type ResponseRecord } from "@/lib/response-stats";
-import { Badge, Button, Input, Select, cn } from "@/components/ui/primitives";
+import { Badge, Button, Input, Select, cn } from "tpass-ui";
 import { QuestionSummary } from "@/components/responses/QuestionSummary";
 import { SingleResponse } from "@/components/responses/SingleResponse";
 import { AnswerView } from "@/components/responses/AnswerView";

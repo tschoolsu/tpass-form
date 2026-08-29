@@ -4,7 +4,7 @@
 import * as React from "react";
 import { Upload, X } from "lucide-react";
 import type { QuestionBlock } from "@/lib/survey-schema";
-import { Input, Textarea, Select, cn } from "@/components/ui/primitives";
+import { Input, Textarea, Select, cn } from "tpass-ui";
 import { DescriptionImages } from "@/components/common/DescriptionImages";
 import { RichText } from "@/components/common/RichText";
 
