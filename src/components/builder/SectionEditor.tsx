@@ -1,7 +1,7 @@
 "use client";
 
 import type { SectionBlock } from "@/lib/survey-schema";
-import { Input, Select, Badge, Label } from "@/components/ui/primitives";
+import { Input, Textarea, Select, Badge, Label } from "@/components/ui/primitives";
 import { ImageAttachments } from "./ImageAttachments";
 
 interface Props {
@@ -25,10 +25,10 @@ export function SectionEditor({ formId, block, sections, onChange }: Props) {
         className="font-bold"
         onChange={(e) => set({ title: e.target.value })}
       />
-      <Input
+      <Textarea
         value={block.description ?? ""}
-        placeholder="區段說明（選填）"
-        className="text-sm"
+        placeholder="區段說明（選填，可換行）"
+        className="min-h-16 text-sm"
         onChange={(e) => set({ description: e.target.value })}
       />
       <ImageAttachments

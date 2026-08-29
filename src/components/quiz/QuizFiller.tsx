@@ -250,7 +250,7 @@ export function QuizFiller({
       >
         <h2 className="font-extrabold text-lg sm:text-xl">{q.title}</h2>
         {q.description && (
-          <p className="mt-1 font-medium text-muted-foreground">{q.description}</p>
+          <p className="mt-1 font-medium text-muted-foreground whitespace-pre-wrap">{q.description}</p>
         )}
 
         <div role="radiogroup" aria-label={q.title} className="mt-4 flex flex-col gap-2.5">

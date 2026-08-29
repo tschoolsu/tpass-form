@@ -31,7 +31,9 @@ export function QuestionRenderer({ question: q, value, onChange, error, formId }
         {q.required && <span className="text-destructive font-bold">*</span>}
       </div>
       {q.description && (
-        <p className="mt-1 text-sm font-medium text-muted-foreground">{q.description}</p>
+        <p className="mt-1 text-sm font-medium text-muted-foreground whitespace-pre-wrap">
+          {q.description}
+        </p>
       )}
       <DescriptionImages images={q.images} />
       <div className="mt-3">
