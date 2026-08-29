@@ -36,6 +36,7 @@ import {
 import type { FormStatus } from "@/lib/forms";
 import { Button, Input, Textarea, Badge } from "@/components/ui/primitives";
 import { SortableBlock } from "./SortableBlock";
+import { InsertDivider } from "./InsertDivider";
 import { SettingsPanel } from "./SettingsPanel";
 import { CopyLinkButton } from "@/components/common/CopyLinkButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -152,6 +153,14 @@ export function FormBuilder(props: Props) {
 
   const addBlock = (b: Block) => setDef((d) => ({ blocks: [...d.blocks, b] }));
 
+  // 插到第 index 個 block 之前。index === blocks.length 就等於接在最後面。
+  const insertBlock = (index: number, b: Block) =>
+    setDef((d) => {
+      const blocks = [...d.blocks];
+      blocks.splice(index, 0, b);
+      return { blocks };
+    });
+
   const onDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
@@ -256,17 +265,20 @@ export function FormBuilder(props: Props) {
               items={def.blocks.map((b) => b.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="flex flex-col gap-4">
-                {def.blocks.map((block) => (
-                  <SortableBlock
-                    key={block.id}
-                    formId={props.id}
-                    block={block}
-                    sections={sections}
-                    onChange={updateBlock}
-                    onDuplicate={() => duplicateBlock(block.id)}
-                    onDelete={() => deleteBlock(block.id)}
-                  />
+              {/* gap 交給 InsertDivider 撐（h-4 = 原本的 gap-4），縫隙才點得到。 */}
+              <div className="flex flex-col">
+                {def.blocks.map((block, i) => (
+                  <React.Fragment key={block.id}>
+                    <InsertDivider onInsert={(b) => insertBlock(i, b)} />
+                    <SortableBlock
+                      formId={props.id}
+                      block={block}
+                      sections={sections}
+                      onChange={updateBlock}
+                      onDuplicate={() => duplicateBlock(block.id)}
+                      onDelete={() => deleteBlock(block.id)}
+                    />
+                  </React.Fragment>
                 ))}
               </div>
             </SortableContext>
