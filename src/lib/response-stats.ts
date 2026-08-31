@@ -8,6 +8,7 @@ import { isBlank } from "@/lib/answers";
 export interface ResponseRecord {
   id: string;
   submittedAt: Date;
+  editedAt: Date | null;
   respondentName: string | null;
   respondentEmail: string | null;
   respondentGrade: number | null;

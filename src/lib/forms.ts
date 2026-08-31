@@ -213,6 +213,7 @@ export async function listResponses(id: string): Promise<ResponseRow[]> {
   return rows.map((r) => ({
     id: r.id,
     submittedAt: r.submittedAt,
+    editedAt: r.editedAt,
     respondentName: r.respondentName,
     respondentEmail: r.respondentEmail,
     respondentGrade: r.respondentGrade,

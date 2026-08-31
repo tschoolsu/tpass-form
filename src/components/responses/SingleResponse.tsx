@@ -18,6 +18,7 @@ export function SingleResponse({
       <div className="mb-4 flex flex-wrap items-center gap-2 border-b-2 border-dashed border-foreground/15 pb-3">
         <span className="font-mono text-[11px] text-muted-foreground">
           {response.submittedAt.toLocaleString("zh-TW")}
+          {response.editedAt && ` · 更新於 ${response.editedAt.toLocaleString("zh-TW")}`}
         </span>
         {response.respondentName && (
           <Badge className="bg-tone-blue-badge">{response.respondentName}</Badge>

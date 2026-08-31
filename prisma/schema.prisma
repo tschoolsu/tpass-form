@@ -44,6 +44,7 @@ model Response {
   respondentGrade Int? // 由 email 推導
   answers         Json // { [questionId]: value }
   submittedAt     DateTime @default(now())
+  editedAt        DateTime? // 填寫者事後修改過 → 最後修改時間；null = 沒改過
 
   @@unique([formId, respondentSub])
   @@unique([formId, anonHash])
