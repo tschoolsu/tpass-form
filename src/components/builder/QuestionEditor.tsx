@@ -17,6 +17,7 @@ import {
   Button,
   Label,
 } from "tpass-ui";
+import { MAX_FILE_MB } from "@/lib/file-limits";
 import { QuestionRenderer } from "@/components/fill/QuestionRenderer";
 import { ImageAttachments } from "./ImageAttachments";
 
@@ -312,13 +313,16 @@ function FileEditor({
         />
       </div>
       <div>
-        <Label>單檔上限 (MB)</Label>
+        <Label>單檔上限 (MB，最多 {MAX_FILE_MB})</Label>
         <Input
           type="number"
           min={1}
+          max={MAX_FILE_MB}
           className="mt-1 w-24 py-1.5"
           value={file.maxSizeMB}
-          onChange={(e) => upd({ maxSizeMB: Math.max(1, Number(e.target.value) || 1) })}
+          onChange={(e) =>
+            upd({ maxSizeMB: Math.min(MAX_FILE_MB, Math.max(1, Number(e.target.value) || 1)) })
+          }
         />
       </div>
       <div className="grow">

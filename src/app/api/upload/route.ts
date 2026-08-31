@@ -5,23 +5,10 @@ import { tpass } from "@/config/auth";
 import { prisma } from "@/lib/db";
 import { formDefinitionSchema, formSettingsSchema } from "@/lib/survey-schema";
 import { newStorageKey, putObject } from "@/lib/storage";
+import { fileLimits, guessMime, mimeAllowed } from "@/lib/file-limits";
 
 // 單一使用者對單一問卷的上傳數上限（防灌爆儲存空間；正常填寫遠低於此）。
 const MAX_UPLOADS_PER_USER_PER_FORM = 20;
-
-// 檔案型別是否符合題目設定的 accept 清單（空清單 = 不限制）。
-// accept 項目支援三種形式（與 <input accept> 一致）：.pdf / image/* / application/pdf
-function mimeAllowed(accept: string[], mime: string, filename: string): boolean {
-  if (accept.length === 0) return true;
-  const lowerName = filename.toLowerCase();
-  return accept.some((a) => {
-    const rule = a.trim().toLowerCase();
-    if (!rule) return false;
-    if (rule.startsWith(".")) return lowerName.endsWith(rule);
-    if (rule.endsWith("/*")) return mime.startsWith(rule.slice(0, -1));
-    return mime === rule;
-  });
-}
 
 export async function POST(request: Request) {
   const session = await tpass.getSession();
@@ -57,14 +44,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "no such file question" }, { status: 400 });
   }
 
-  const maxBytes = (q.file?.maxSizeMB ?? 10) * 1024 * 1024;
-  if (file.size > maxBytes) {
+  // 上限與填寫端同一份 helper（含「題目設 100MB 也只生效 20」的 clamp）。
+  const limits = fileLimits(q);
+  if (file.size > limits.maxSizeMB * 1024 * 1024) {
     return NextResponse.json({ error: "file too large" }, { status: 413 });
   }
 
   // 伺服器端也驗題目的 accept 清單——前端 <input accept> 只是 UX，不是門禁（M3）。
-  const mime = file.type || "application/octet-stream";
-  if (!mimeAllowed(q.file?.accept ?? [], mime, file.name)) {
+  // 部分 Android 選檔器不給 type，靠副檔名補一手，不然手機照片會整批 415。
+  const mime = guessMime(file.name, file.type);
+  if (!mimeAllowed(limits.accept, mime, file.name)) {
     return NextResponse.json({ error: "file type not allowed" }, { status: 415 });
   }
 
@@ -78,7 +67,7 @@ export async function POST(request: Request) {
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const storageKey = newStorageKey();
-  await putObject(storageKey, buffer, file.type || "application/octet-stream");
+  await putObject(storageKey, buffer, mime);
 
   const upload = await prisma.upload.create({
     data: {
@@ -86,7 +75,7 @@ export async function POST(request: Request) {
       questionId,
       storageKey,
       filename: file.name,
-      mime: file.type || "application/octet-stream",
+      mime,
       size: file.size,
       uploaderSub: session.sub,
     },

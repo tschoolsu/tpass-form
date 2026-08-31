@@ -7,6 +7,7 @@ import type { QuestionBlock } from "@/lib/survey-schema";
 import { Input, Textarea, Select, cn } from "tpass-ui";
 import { DescriptionImages } from "@/components/common/DescriptionImages";
 import { RichText } from "@/components/common/RichText";
+import { describeAccept, describeUploadError, fileLimits } from "@/lib/file-limits";
 
 export interface UploadedFile {
   id: string;
@@ -273,68 +274,94 @@ function FileField({
   formId?: string;
 }) {
   const files = Array.isArray(value) ? (value as UploadedFile[]) : [];
-  const [busy, setBusy] = React.useState(false);
-  const [err, setErr] = React.useState<string | null>(null);
-  const maxFiles = q.file?.maxFiles ?? 1;
-  const accept = q.file?.accept?.join(",") || undefined;
+  // busy = 正在傳第幾個 / 共幾個；null = 閒置。
+  const [busy, setBusy] = React.useState<{ done: number; total: number } | null>(null);
+  // 上一批的失敗清單，逐檔講原因；成功的直接進 files，不必再列一次。
+  const [failures, setFailures] = React.useState<Array<{ name: string; reason: string }>>([]);
+  const { maxFiles, maxSizeMB, accept } = fileLimits(q);
   const canUpload = !readOnly && !!formId;
+  const remaining = maxFiles - files.length;
 
   async function handleFiles(list: FileList | null) {
     if (!list || !formId) return;
-    setErr(null);
-    const incoming = Array.from(list);
-    if (files.length + incoming.length > maxFiles) {
-      setErr(`最多上傳 ${maxFiles} 個檔案`);
-      return;
-    }
-    setBusy(true);
+    const picked = Array.from(list);
+    // 超過數量：收下能收的，不把整批打回去——選了 5 張只能放 3 張，不該一張都不留。
+    const incoming = picked.slice(0, Math.max(0, remaining));
+    const failed: Array<{ name: string; reason: string }> = picked
+      .slice(incoming.length)
+      .map((f) => ({ name: f.name, reason: `超過 ${maxFiles} 個的上限，沒有收` }));
+
+    setFailures([]);
+    setBusy({ done: 0, total: incoming.length });
     try {
       const uploaded: UploadedFile[] = [];
-      for (const file of incoming) {
-        if (q.file && file.size > q.file.maxSizeMB * 1024 * 1024) {
-          setErr(`「${file.name}」超過 ${q.file.maxSizeMB}MB`);
+      for (const [i, file] of incoming.entries()) {
+        setBusy({ done: i, total: incoming.length });
+        if (file.size > maxSizeMB * 1024 * 1024) {
+          failed.push({ name: file.name, reason: `超過 ${maxSizeMB}MB` });
           continue;
         }
         const fd = new FormData();
         fd.set("file", file);
         fd.set("formId", formId);
         fd.set("questionId", q.id);
-        const res = await fetch("/api/upload", { method: "POST", body: fd });
-        if (!res.ok) {
-          setErr("上傳失敗，請再試一次");
-          continue;
+        try {
+          const res = await fetch("/api/upload", { method: "POST", body: fd });
+          if (!res.ok) {
+            failed.push({ name: file.name, reason: describeUploadError(res.status) });
+            continue;
+          }
+          const data = (await res.json()) as { id: string; filename: string };
+          uploaded.push({ id: data.id, name: data.filename });
+        } catch {
+          failed.push({ name: file.name, reason: "連線中斷，請確認網路後再試一次" });
         }
-        const data = (await res.json()) as { id: string; filename: string };
-        uploaded.push({ id: data.id, name: data.filename });
       }
       if (uploaded.length) emit([...files, ...uploaded]);
+      setFailures(failed);
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
+
+  const acceptText = describeAccept(accept);
 
   return (
     <div>
       <label
         className={cn(
           "flex items-center gap-2 w-fit rounded-xl border-2 border-dashed border-foreground/50 bg-muted px-4 py-3 font-bold text-sm",
-          canUpload ? "cursor-pointer hover:border-foreground" : "opacity-60 cursor-not-allowed",
+          canUpload && remaining > 0
+            ? "cursor-pointer hover:border-foreground"
+            : "opacity-60 cursor-not-allowed",
         )}
       >
         <Upload className="h-4 w-4" />
-        {busy ? "上傳中…" : "選擇檔案"}
+        {busy
+          ? busy.total > 1
+            ? `上傳中（${busy.done + 1}/${busy.total}）…`
+            : "上傳中…"
+          : remaining <= 0
+            ? "已達上限"
+            : maxFiles > 1
+              ? "選擇檔案（可多選）"
+              : "選擇檔案"}
         <input
           type="file"
           hidden
           multiple={maxFiles > 1}
-          accept={accept}
-          disabled={!canUpload || busy}
-          onChange={(e) => handleFiles(e.target.files)}
+          accept={accept.join(",") || undefined}
+          disabled={!canUpload || !!busy || remaining <= 0}
+          onChange={(e) => {
+            void handleFiles(e.target.files);
+            // 清掉 value，否則移除後再選同一個檔不會觸發 onChange，看起來像點了沒反應。
+            e.target.value = "";
+          }}
         />
       </label>
       <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-        最多 {maxFiles} 個，單檔 ≤ {q.file?.maxSizeMB ?? 10}MB
-        {accept ? `，限 ${accept}` : ""}
+        最多 {maxFiles} 個，單檔 ≤ {maxSizeMB}MB
+        {acceptText ? `，限 ${acceptText}` : ""}
       </p>
       {files.length > 0 && (
         <ul className="mt-2 flex flex-col gap-1">
@@ -358,7 +385,15 @@ function FileField({
           ))}
         </ul>
       )}
-      {err && <p className="mt-2 font-mono text-xs font-bold text-destructive">{err}</p>}
+      {failures.length > 0 && (
+        <ul className="mt-2 flex flex-col gap-1 font-mono text-xs font-bold text-destructive">
+          {failures.map((f, i) => (
+            <li key={i}>
+              ✗ {f.name}：{f.reason}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
