@@ -8,6 +8,7 @@ import { newStorageKey, putObject } from "@/lib/storage";
 import { fileLimits, guessMime, mimeAllowed } from "@/lib/file-limits";
 
 // 單一使用者對單一問卷的上傳數上限（防灌爆儲存空間；正常填寫遠低於此）。
+// 編輯回覆途中放棄的上傳沒人引用，也算在這裡（目前沒有 GC，見 spec「不做」）。
 const MAX_UPLOADS_PER_USER_PER_FORM = 20;
 
 export async function POST(request: Request) {

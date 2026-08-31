@@ -191,7 +191,7 @@ export async function setStatus(id: string, status: FormStatus): Promise<void> {
 
 // 「自己那一筆」的查詢 key。與 submitFormAction 寫進去的那一份完全一致
 // （匿名→anonHash、具名→respondentSub），所以這裡跟 DB unique 約束永遠同步。
-export function ownResponseWhere(
+function ownResponseWhere(
   form: FormView,
   sub: string,
 ): { formId: string; anonHash: string } | { formId: string; respondentSub: string } {
@@ -210,11 +210,6 @@ export async function findOwnResponse(
     where: ownResponseWhere(form, sub),
     select: { id: true, answers: true, submittedAt: true },
   });
-}
-
-// 這個人已經對這份問卷送出過了嗎？把攔截點從「送出那一刻」提前到「進場前」，不是另一套規則。
-export async function hasSubmitted(form: FormView, sub: string): Promise<boolean> {
-  return (await findOwnResponse(form, sub)) !== null;
 }
 
 export type ResponseRow = ResponseRecord;
@@ -238,10 +233,15 @@ export async function listResponses(id: string): Promise<ResponseRow[]> {
 
 // 刪一批附件（Upload row + 儲存體物件）。formId 一起帶入 where，擋「拿 A 表單的權限刪 B 表單的檔」。
 // 儲存體是 best-effort：刪不掉只留孤兒檔案，不該讓已完成的 DB 交易白費。
-export async function deleteUploads(formId: string, uploadIds: string[]): Promise<void> {
+// 填寫端一律帶本人 sub——answers 裡若被塞進別人的 upload id，也刪不到別人的檔。
+export async function deleteUploads(
+  formId: string,
+  uploadIds: string[],
+  uploaderSub?: string,
+): Promise<void> {
   if (uploadIds.length === 0) return;
   const uploads = await prisma.upload.findMany({
-    where: { id: { in: uploadIds }, formId },
+    where: { id: { in: uploadIds }, formId, ...(uploaderSub ? { uploaderSub } : {}) },
     select: { id: true, storageKey: true },
   });
   await prisma.upload.deleteMany({ where: { id: { in: uploads.map((u) => u.id) } } });
@@ -264,6 +264,8 @@ export async function deleteResponse(formId: string, responseId: string): Promis
   });
   if (!row) throw new Error("not found");
 
+  // 刻意不包 $transaction——deleteUploads 內含儲存體刪除，不能進交易；
+  // 最壞情況是回覆已刪、Upload row 留孤兒，可接受。
   await prisma.response.delete({ where: { id: responseId } });
   await deleteUploads(formId, collectUploadIds(row.answers));
 }

@@ -75,6 +75,8 @@ export function FormFiller({
   const [submitting, setSubmitting] = React.useState(false);
   const [done, setDone] = React.useState(false);
   const [message, setMessage] = React.useState<string | null>(null);
+  // 以 server 的事實為準——兩個分頁競態時，本頁以為是新填其實走了 update。
+  const [finishedAsUpdate, setFinishedAsUpdate] = React.useState(false);
 
   const currentId = history[history.length - 1];
   const section = byId.get(currentId) ?? sections[0];
@@ -116,6 +118,7 @@ export function FormFiller({
       }
       if (res.ok) {
         draft.markDone(); // 送出後草稿已由伺服器刪掉，別再存回去
+        setFinishedAsUpdate(res.updated ?? editing);
         setDone(true);
       } else {
         if (res.errors) setErrors(res.errors);
@@ -146,10 +149,10 @@ export function FormFiller({
       <div className="rounded-2xl border-2 border-foreground bg-card p-10 text-center shadow-[4px_4px_0_0_var(--color-foreground)]">
         <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
         <h2 className="mt-4 font-extrabold text-2xl">
-          {editing ? "已更新，謝謝你！" : "已送出，謝謝你！"}
+          {finishedAsUpdate ? "已更新，謝謝你！" : "已送出，謝謝你！"}
         </h2>
         <p className="mt-2 font-medium text-muted-foreground">
-          {editing ? "你的修改已經收到。" : "你的回覆已經收到。"}
+          {finishedAsUpdate ? "你的修改已經收到。" : "你的回覆已經收到。"}
         </p>
       </div>
     );

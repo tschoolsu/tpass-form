@@ -14,6 +14,7 @@ import { findOwnResponse, deleteUploads, getPublicForm } from "@/lib/forms";
 import { removedUploadIds } from "@/lib/upload-refs";
 import { validateAnswers, type AnswerMap } from "@/lib/answers";
 import { deriveGrade } from "@/lib/grade";
+import { hasQuizSkin } from "@/lib/quiz/skins";
 import {
   deleteDraft,
   discardDraft,
@@ -77,7 +78,8 @@ export async function submitFormAction(
   let updated = false;
 
   if (existing) {
-    if (!form.settings.allowEditAfterSubmit) {
+    // quiz 皮不支援編輯（見 spec 範圍）；頁面已擋，這裡是 server action 被直接 POST 時的第二道。
+    if (!form.settings.allowEditAfterSubmit || hasQuizSkin(slug)) {
       return { ok: false, message: "你已經填過這份問卷了。" };
     }
     // 修改既有回覆：身分戳記維持首次送出的值，只換答案、記下修改時間。
@@ -86,8 +88,9 @@ export async function submitFormAction(
       data: { answers: answers as Prisma.InputJsonValue, editedAt: now },
     });
     // 不再被引用的附件回收；best-effort——回覆已落地，回收失敗頂多留孤兒檔，不能讓使用者看到「送出失敗」。
+    // 帶 session.sub：answers 裡若被塞進別人的 upload id，也刪不到別人的檔。
     try {
-      await deleteUploads(form.id, removedUploadIds(existing.answers, answers));
+      await deleteUploads(form.id, removedUploadIds(existing.answers, answers), session.sub);
     } catch (e) {
       console.error("[submit] 回收附件失敗", e);
     }
@@ -108,9 +111,10 @@ export async function submitFormAction(
       }
       throw e;
     }
-    // 回覆已落地，草稿功成身退（附件已屬於這筆回覆，不能跟著刪）。編輯模式沒有草稿。
-    await deleteDraft(form.id, session.sub);
   }
+  // 回覆已落地，草稿功成身退——兩個分頁競態下，後送的那個走 update 也要把草稿清掉，
+  // 否則它會永遠留著。deleteMany 是冪等操作，兩條路都跑一次沒差。
+  await deleteDraft(form.id, session.sub);
 
   // 通知排在回應之後（after）：webhook 最多要等 10 秒，填寫者不該替它站崗；
   // 而且通知失敗絕不能讓「已經存進 DB 的回覆」看起來像送出失敗。
