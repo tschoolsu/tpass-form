@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { checkWebhookUrl } from "@/lib/webhook-format";
-import { notifyNewResponse } from "@/lib/webhooks";
+import { notifyResponse } from "@/lib/webhooks";
 import { authConfig } from "@/config/auth";
 
 export interface WebhookResult {
@@ -53,7 +53,7 @@ export async function deleteWebhookAction(formData: FormData): Promise<void> {
   revalidatePath("/admin/webhooks");
 }
 
-// 測試發送：走的是跟真正通知一模一樣的路徑（同一支 notifyNewResponse），
+// 測試發送：走的是跟真正通知一模一樣的路徑（同一支 notifyResponse），
 // 只是內容標成測試。這樣「測試會通、正式卻不通」的情況不會發生。
 export async function testWebhookAction(
   _prev: WebhookResult | null,
@@ -63,11 +63,12 @@ export async function testWebhookAction(
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { ok: false, error: "沒有指定 webhook。" };
 
-  const [result] = await notifyNewResponse([id], {
+  const [result] = await notifyResponse([id], {
     formTitle: "（測試通知）T-Form",
     responsesUrl: `${authConfig.selfUrl}/admin`,
     respondent: "測試",
     submittedAt: new Date(),
+    kind: "new",
   });
 
   revalidatePath("/admin/webhooks");

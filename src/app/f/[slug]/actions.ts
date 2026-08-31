@@ -6,7 +6,7 @@ import { after } from "next/server";
 import { Prisma } from "@prisma/client";
 import { requireSession } from "@/lib/guard";
 import { authConfig } from "@/config/auth";
-import { notifyNewResponse } from "@/lib/webhooks";
+import { notifyResponse } from "@/lib/webhooks";
 import { answerToText, questionBlocks } from "@/lib/answer-format";
 import { anonKeyFor } from "@/lib/anon-key";
 import { prisma } from "@/lib/db";
@@ -101,12 +101,13 @@ export async function submitFormAction(
       : undefined;
 
     after(async () => {
-      await notifyNewResponse(webhookIds, {
+      await notifyResponse(webhookIds, {
         formTitle: form.title,
         responsesUrl: `${authConfig.selfUrl}/admin/forms/${form.id}/responses`,
         // 匿名或沒收姓名 → null，通知只說「有人填了」。
         respondent: stamp.respondentName ?? stamp.respondentEmail,
         submittedAt: new Date(),
+        kind: "new",
         answers: answerLines,
       });
     });

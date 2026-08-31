@@ -170,7 +170,7 @@ export const formSettingsSchema = z.object({
   // 收到新回覆時要通知哪些 webhook（目標在 /admin/webhooks 登記，這裡只存 id）。
   // 空陣列＝不通知，這是預設——大量回覆的問卷開了只會洗版。
   // 存 id 不存關聯：webhook 被刪掉時這裡會留下孤兒 id，讀取端一律以現存的 webhook 為準
-  // （notifyNewResponse 用 id IN (...) 查，查不到就是不送），不需要為此多一張表。
+  // （notifyResponse 用 id IN (...) 查，查不到就是不送），不需要為此多一張表。
   webhookIds: z.array(z.string()).default([]),
   // 通知要不要連答案內容一起送。預設 false（只送「有新回覆 + 是誰」）——
   // 這是預設值，不是禁令：由開這份問卷的人自己決定，UI 上有說明代價。

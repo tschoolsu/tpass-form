@@ -46,7 +46,7 @@ async function post(
 
 // 送一輪通知。**永遠不外拋**：回覆已經落地，通知掛掉不該讓填寫者看到送出失敗。
 // 呼叫端用 next/server 的 after() 排在回應之後，所以填寫者不會等這 10 秒。
-export async function notifyNewResponse(
+export async function notifyResponse(
   webhookIds: string[],
   notice: ResponseNotice,
 ): Promise<DeliveryResult[]> {

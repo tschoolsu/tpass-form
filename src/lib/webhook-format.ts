@@ -72,6 +72,8 @@ export interface ResponseNotice {
   // 匿名問卷、或沒收姓名的問卷 → null，通知就只說「有人填了」。
   respondent: string | null;
   submittedAt: Date;
+  // new = 第一次送出；updated = 填寫者事後修改（問卷開了「送出後可修改」）。
+  kind: "new" | "updated";
   // 只有在該問卷勾了「連答案一起送」時才會有值。undefined／空陣列＝只送關鍵資訊。
   answers?: AnswerLine[];
 }
@@ -108,11 +110,13 @@ function timeLabel(d: Date): string {
 export function buildPayload(kind: WebhookKind, n: ResponseNotice): unknown {
   const who = n.respondent ?? "（匿名／未收姓名）";
   const body = answersBlock(n.answers);
+  const headline =
+    n.kind === "updated" ? `✏️ *${n.formTitle}* 有人更新了回覆` : `📥 *${n.formTitle}* 有新回覆`;
 
   if (kind === "google_chat") {
     return {
       text: [
-        `📥 *${n.formTitle}* 有新回覆`,
+        headline,
         `填寫者：${who}`,
         `時間：${timeLabel(n.submittedAt)}`,
         body ?? "內容不在此顯示，請至後台查看：",
@@ -123,7 +127,7 @@ export function buildPayload(kind: WebhookKind, n: ResponseNotice): unknown {
   return {
     embeds: [
       {
-        title: "問卷有新回覆",
+        title: n.kind === "updated" ? "問卷回覆已更新" : "問卷有新回覆",
         description: [
           `**${n.formTitle}**`,
           `填寫者：${who}`,

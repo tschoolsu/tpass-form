@@ -49,6 +49,7 @@ describe("buildPayload", () => {
     responsesUrl: "https://form.test.invalid/admin/forms/f1/responses",
     respondent: "某同學",
     submittedAt: new Date("2026-08-27T12:34:56Z"),
+    kind: "new" as const,
   };
 
   // 預設模式：沒有 answers 就不會有任何答案內容跑出去。
@@ -72,6 +73,19 @@ describe("buildPayload", () => {
     expect(buildPayload("google_chat", notice)).toHaveProperty("text");
     expect(buildPayload("discord", notice)).toHaveProperty("embeds");
   });
+
+  it("更新回覆：兩家都換成「更新」標題，其餘欄位不變", () => {
+    const updated = { ...notice, kind: "updated" as const };
+    const gc = JSON.stringify(buildPayload("google_chat", updated));
+    expect(gc).toContain("有人更新了回覆");
+    expect(gc).not.toContain("有新回覆");
+    expect(gc).toContain("某同學");
+    expect(gc).toContain("admin/forms/f1/responses");
+
+    const dc = buildPayload("discord", updated) as { embeds: Array<{ title: string; description: string }> };
+    expect(dc.embeds[0].title).toBe("問卷回覆已更新");
+    expect(dc.embeds[0].description).toContain("某同學");
+  });
 });
 
 // 「連答案一起送」是每份問卷自己的選擇（settings.webhookIncludeAnswers）。
@@ -82,6 +96,7 @@ describe("buildPayload：連答案一起送", () => {
     responsesUrl: "https://form.test.invalid/admin/forms/f1/responses",
     respondent: "某同學",
     submittedAt: new Date("2026-08-27T12:34:56Z"),
+    kind: "new" as const,
   };
   const answers = [
     { title: "發生了什麼事？", text: "問卷送出後一直轉圈圈" },
