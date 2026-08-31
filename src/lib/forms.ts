@@ -189,17 +189,32 @@ export async function setStatus(id: string, status: FormStatus): Promise<void> {
   });
 }
 
-// 回覆的形狀定義在 response-stats（isomorphic），這裡沿用同一份，避免 server/client 各寫一份。
-// 這個人已經對這份問卷送出過了嗎？只在 oneResponsePerUser 時有意義。
-// 查的 key 與 submitFormAction 寫進去的那一份完全一致（匿名→anonHash、具名→respondentSub），
-// 所以這裡的判斷跟 DB unique 約束永遠同步——它只是把攔截點從「送出那一刻」提前到「進場前」，
-// 不是另一套規則。
-export async function hasSubmitted(form: FormView, sub: string): Promise<boolean> {
-  if (!form.settings.oneResponsePerUser) return false;
-  const where = form.settings.anonymous
+// 「自己那一筆」的查詢 key。與 submitFormAction 寫進去的那一份完全一致
+// （匿名→anonHash、具名→respondentSub），所以這裡跟 DB unique 約束永遠同步。
+export function ownResponseWhere(
+  form: FormView,
+  sub: string,
+): { formId: string; anonHash: string } | { formId: string; respondentSub: string } {
+  return form.settings.anonymous
     ? { formId: form.id, anonHash: anonKeyFor(sub, form.id) }
     : { formId: form.id, respondentSub: sub };
-  return (await prisma.response.count({ where })) > 0;
+}
+
+// 這個人對這份問卷送出過的那一筆。只在 oneResponsePerUser 時有意義，否則一律 null。
+export async function findOwnResponse(
+  form: FormView,
+  sub: string,
+): Promise<{ id: string; answers: unknown; submittedAt: Date } | null> {
+  if (!form.settings.oneResponsePerUser) return null;
+  return prisma.response.findFirst({
+    where: ownResponseWhere(form, sub),
+    select: { id: true, answers: true, submittedAt: true },
+  });
+}
+
+// 這個人已經對這份問卷送出過了嗎？把攔截點從「送出那一刻」提前到「進場前」，不是另一套規則。
+export async function hasSubmitted(form: FormView, sub: string): Promise<boolean> {
+  return (await findOwnResponse(form, sub)) !== null;
 }
 
 export type ResponseRow = ResponseRecord;
@@ -221,31 +236,15 @@ export async function listResponses(id: string): Promise<ResponseRow[]> {
   }));
 }
 
-// 刪掉單一筆回覆，連同該筆上傳的附件（Upload row + 儲存體物件）。
-// 副作用：若問卷設了 oneResponsePerUser，unique key（formId+respondentSub / formId+anonHash）
-// 隨 row 一起消失 → 該使用者可以再填一次。這是刻意的行為，不是漏洞。
-export async function deleteResponse(formId: string, responseId: string): Promise<void> {
-  // formId 一起帶入 where，擋「拿 A 表單的權限刪 B 表單的回覆」。
-  const row = await prisma.response.findFirst({
-    where: { id: responseId, formId },
-    select: { answers: true },
+// 刪一批附件（Upload row + 儲存體物件）。formId 一起帶入 where，擋「拿 A 表單的權限刪 B 表單的檔」。
+// 儲存體是 best-effort：刪不掉只留孤兒檔案，不該讓已完成的 DB 交易白費。
+export async function deleteUploads(formId: string, uploadIds: string[]): Promise<void> {
+  if (uploadIds.length === 0) return;
+  const uploads = await prisma.upload.findMany({
+    where: { id: { in: uploadIds }, formId },
+    select: { id: true, storageKey: true },
   });
-  if (!row) throw new Error("not found");
-
-  const uploadIds = collectUploadIds(row.answers);
-  const uploads = uploadIds.length
-    ? await prisma.upload.findMany({
-        where: { id: { in: uploadIds }, formId },
-        select: { id: true, storageKey: true },
-      })
-    : [];
-
-  await prisma.$transaction([
-    prisma.response.delete({ where: { id: responseId } }),
-    prisma.upload.deleteMany({ where: { id: { in: uploads.map((u) => u.id) } } }),
-  ]);
-
-  // 儲存體是 best-effort：刪不掉只留孤兒檔案，不該讓已完成的 DB 交易白費。
+  await prisma.upload.deleteMany({ where: { id: { in: uploads.map((u) => u.id) } } });
   for (const u of uploads) {
     try {
       await deleteObject(u.storageKey);
@@ -253,6 +252,20 @@ export async function deleteResponse(formId: string, responseId: string): Promis
       console.error("[forms] deleteObject failed", u.storageKey, e);
     }
   }
+}
+
+// 刪掉單一筆回覆，連同該筆上傳的附件（Upload row + 儲存體物件）。
+// 副作用：若問卷設了 oneResponsePerUser，unique key（formId+respondentSub / formId+anonHash）
+// 隨 row 一起消失 → 該使用者可以再填一次。這是刻意的行為，不是漏洞。
+export async function deleteResponse(formId: string, responseId: string): Promise<void> {
+  const row = await prisma.response.findFirst({
+    where: { id: responseId, formId },
+    select: { answers: true },
+  });
+  if (!row) throw new Error("not found");
+
+  await prisma.response.delete({ where: { id: responseId } });
+  await deleteUploads(formId, collectUploadIds(row.answers));
 }
 
 export async function deleteForm(id: string): Promise<void> {
