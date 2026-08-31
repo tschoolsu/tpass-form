@@ -10,7 +10,8 @@ import { notifyResponse } from "@/lib/webhooks";
 import { answerToText, questionBlocks } from "@/lib/answer-format";
 import { anonKeyFor } from "@/lib/anon-key";
 import { prisma } from "@/lib/db";
-import { getPublicForm } from "@/lib/forms";
+import { findOwnResponse, deleteUploads, getPublicForm } from "@/lib/forms";
+import { removedUploadIds } from "@/lib/upload-refs";
 import { validateAnswers, type AnswerMap } from "@/lib/answers";
 import { deriveGrade } from "@/lib/grade";
 import {
@@ -25,6 +26,7 @@ export interface SubmitResult {
   ok: boolean;
   errors?: Record<string, string>;
   message?: string;
+  updated?: boolean; // true = 這次是修改既有回覆
 }
 
 export async function submitFormAction(
@@ -70,23 +72,41 @@ export async function submitFormAction(
     }
   }
 
-  try {
-    await prisma.response.create({
-      data: {
-        formId: form.id,
-        answers: answers as Prisma.InputJsonValue,
-        ...stamp,
-      },
-    });
-  } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+  const now = new Date();
+  const existing = await findOwnResponse(form, session.sub);
+  let updated = false;
+
+  if (existing) {
+    if (!form.settings.allowEditAfterSubmit) {
       return { ok: false, message: "你已經填過這份問卷了。" };
     }
-    throw e;
+    // 修改既有回覆：身分戳記維持首次送出的值，只換答案、記下修改時間。
+    await prisma.response.update({
+      where: { id: existing.id },
+      data: { answers: answers as Prisma.InputJsonValue, editedAt: now },
+    });
+    // 不再被引用的附件回收，別留孤兒檔。
+    await deleteUploads(form.id, removedUploadIds(existing.answers, answers));
+    updated = true;
+  } else {
+    try {
+      await prisma.response.create({
+        data: {
+          formId: form.id,
+          answers: answers as Prisma.InputJsonValue,
+          ...stamp,
+        },
+      });
+    } catch (e) {
+      // 併發下 findOwnResponse 撲空但 unique 約束撞到 → 仍是最後防線。
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        return { ok: false, message: "你已經填過這份問卷了。" };
+      }
+      throw e;
+    }
+    // 回覆已落地，草稿功成身退（附件已屬於這筆回覆，不能跟著刪）。編輯模式沒有草稿。
+    await deleteDraft(form.id, session.sub);
   }
-
-  // 回覆已落地，草稿功成身退（附件已屬於這筆回覆，不能跟著刪）。
-  await deleteDraft(form.id, session.sub);
 
   // 通知排在回應之後（after）：webhook 最多要等 10 秒，填寫者不該替它站崗；
   // 而且通知失敗絕不能讓「已經存進 DB 的回覆」看起來像送出失敗。
@@ -106,14 +126,14 @@ export async function submitFormAction(
         responsesUrl: `${authConfig.selfUrl}/admin/forms/${form.id}/responses`,
         // 匿名或沒收姓名 → null，通知只說「有人填了」。
         respondent: stamp.respondentName ?? stamp.respondentEmail,
-        submittedAt: new Date(),
-        kind: "new",
+        submittedAt: now,
+        kind: updated ? "updated" : "new",
         answers: answerLines,
       });
     });
   }
 
-  return { ok: true };
+  return { ok: true, updated };
 }
 
 export interface DraftResult {
