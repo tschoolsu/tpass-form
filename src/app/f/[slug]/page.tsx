@@ -31,7 +31,7 @@ function Shell({
         portalUrl={authConfig.portalUrl}
         isAdmin={admin}
       />
-      <main className="flex-1">
+      <main className="flex-1 overflow-x-clip">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">{children}</div>
       </main>
     </>

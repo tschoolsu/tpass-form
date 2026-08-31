@@ -36,9 +36,9 @@ export function QuestionRenderer({ question: q, value, onChange, error, formId }
         {q.required && <span className="text-destructive font-bold">*</span>}
       </div>
       {q.description && (
-        <p className="mt-1 text-sm font-medium text-muted-foreground whitespace-pre-wrap">
+        <div className="mt-1 text-sm font-medium text-muted-foreground whitespace-pre-wrap">
           <RichText text={q.description} />
-        </p>
+        </div>
       )}
       <DescriptionImages images={q.images} />
       <div className="mt-3">
@@ -154,30 +154,30 @@ function Field({
       const min = q.scale?.min ?? 1;
       const max = q.scale?.max ?? 5;
       const nums = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+      // 兩端說明固定放在數字列下方一排，不跟數字擠同一排：1–10 加上文字在手機寬度
+      // 會在奇怪的地方換行，說明卡在數字中間，看不出誰是左端誰是右端。
       return (
-        <div className="flex items-end gap-3 flex-wrap">
-          {q.scale?.minLabel && (
-            <span className="text-sm font-medium text-muted-foreground pb-2">
-              {q.scale.minLabel}
-            </span>
-          )}
-          {nums.map((n) => (
-            <label key={n} className="flex flex-col items-center gap-1 cursor-pointer">
-              <span className="font-mono text-xs font-bold">{n}</span>
-              <input
-                type="radio"
-                name={q.id}
-                className="h-4 w-4 accent-[var(--color-primary)]"
-                checked={value === n}
-                disabled={readOnly}
-                onChange={() => emit(n)}
-              />
-            </label>
-          ))}
-          {q.scale?.maxLabel && (
-            <span className="text-sm font-medium text-muted-foreground pb-2">
-              {q.scale.maxLabel}
-            </span>
+        <div>
+          <div className="flex flex-wrap gap-3">
+            {nums.map((n) => (
+              <label key={n} className="flex flex-col items-center gap-1 cursor-pointer">
+                <span className="font-mono text-xs font-bold">{n}</span>
+                <input
+                  type="radio"
+                  name={q.id}
+                  className="h-4 w-4 accent-[var(--color-primary)]"
+                  checked={value === n}
+                  disabled={readOnly}
+                  onChange={() => emit(n)}
+                />
+              </label>
+            ))}
+          </div>
+          {(q.scale?.minLabel || q.scale?.maxLabel) && (
+            <div className="mt-1.5 flex justify-between gap-4 text-sm font-medium text-muted-foreground">
+              <span>{q.scale?.minLabel}</span>
+              <span className="text-right">{q.scale?.maxLabel}</span>
+            </div>
           )}
         </div>
       );
@@ -229,7 +229,7 @@ function GridField({
           <tr>
             <th />
             {cols.map((c) => (
-              <th key={c.id} className="px-3 pb-2 text-center text-sm font-bold">
+              <th key={c.id} className="whitespace-nowrap px-3 pb-2 text-center text-sm font-bold">
                 {c.label}
               </th>
             ))}
@@ -238,7 +238,7 @@ function GridField({
         <tbody>
           {rows.map((r) => (
             <tr key={r.id} className="border-t-2 border-dashed border-foreground/20">
-              <td className="py-2 pr-4 font-medium">{r.label}</td>
+              <td className="whitespace-nowrap py-2 pr-4 font-medium">{r.label}</td>
               {cols.map((c) => (
                 <td key={c.id} className="px-3 py-2 text-center">
                   <input

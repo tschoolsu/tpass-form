@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { parseRichText, type RichNode } from "./rich-text";
 
 const text = (t: string): RichNode => ({ kind: "text", text: t });
+const hr: RichNode = { kind: "hr" };
 
 describe("parseRichText", () => {
   it("沒有語法時整段就是一個文字節點", () => {
@@ -102,5 +103,69 @@ describe("parseRichText", () => {
   it("反斜線可以跳脫，把符號當字面顯示", () => {
     expect(parseRichText("\\*不是斜體\\*")).toEqual([text("*不是斜體*")]);
     expect(parseRichText("價格 5\\*3")).toEqual([text("價格 5*3")]);
+  });
+
+  // ── 分隔線 ──────────────────────────────────────────────────────────
+  describe("分隔線（thematic break）", () => {
+    it("前後有文字時，換行一併被吃掉", () => {
+      expect(parseRichText("上\n---\n下")).toEqual([text("上"), hr, text("下")]);
+    });
+
+    it("在文字開頭也能判定（前面沒有換行）", () => {
+      expect(parseRichText("---\n下面")).toEqual([hr, text("下面")]);
+    });
+
+    it("在文字結尾也能判定（後面沒有換行）", () => {
+      expect(parseRichText("上面\n---")).toEqual([text("上面"), hr]);
+    });
+
+    it("整段只有分隔線", () => {
+      expect(parseRichText("---")).toEqual([hr]);
+    });
+
+    it("三種字元都算：- * _", () => {
+      expect(parseRichText("上\n***\n下")).toEqual([text("上"), hr, text("下")]);
+      expect(parseRichText("上\n___\n下")).toEqual([text("上"), hr, text("下")]);
+    });
+
+    it("字元之間、前後可以夾空白或 tab", () => {
+      expect(parseRichText("上\n- - -\n下")).toEqual([text("上"), hr, text("下")]);
+      expect(parseRichText("上\n_ _ _\n下")).toEqual([text("上"), hr, text("下")]);
+      expect(parseRichText("上\n \t- -\t- \t\n下")).toEqual([text("上"), hr, text("下")]);
+    });
+
+    it("字元數可以超過 3 個", () => {
+      expect(parseRichText("上\n----------\n下")).toEqual([text("上"), hr, text("下")]);
+    });
+
+    it("多個分隔線各自被判定", () => {
+      expect(parseRichText("上\n---\n中\n***\n下")).toEqual([
+        text("上"),
+        hr,
+        text("中"),
+        hr,
+        text("下"),
+      ]);
+    });
+
+    it("不是分隔線：前面還有其他字（a---b）", () => {
+      expect(parseRichText("a---b")).toEqual([text("a---b")]);
+    });
+
+    it("不是分隔線：只有兩個字元", () => {
+      expect(parseRichText("上\n--\n下")).toEqual([text("上\n--\n下")]);
+    });
+
+    it("不是分隔線：字元之間夾了其他文字", () => {
+      expect(parseRichText("上\n- - x\n下")).toEqual([text("上\n- - x\n下")]);
+    });
+
+    it("不是分隔線：夾在同一行文字中間", () => {
+      expect(parseRichText("文字 --- 更多文字")).toEqual([text("文字 --- 更多文字")]);
+    });
+
+    it("不是分隔線：混用不同字元", () => {
+      expect(parseRichText("上\n-*-\n下")).toEqual([text("上\n-*-\n下")]);
+    });
   });
 });

@@ -33,6 +33,9 @@ function render(nodes: RichNode[]): React.ReactNode {
             {render(n.children)}
           </del>
         );
+      case "hr":
+        // 分隔線：唯一的區塊語法。虛線＋前景色 token，跟卡片的 dashed 邊框同一套視覺。
+        return <hr key={i} className="my-3 border-0 border-t-2 border-dashed border-foreground/30" />;
       case "link":
         return (
           <a

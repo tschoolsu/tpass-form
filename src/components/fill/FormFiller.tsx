@@ -145,7 +145,7 @@ export function FormFiller({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 wrap-anywhere">
       {/* 抬頭 */}
       <div
         className={cn(
@@ -157,9 +157,9 @@ export function FormFiller({
           <RichText text={title} />
         </h1>
         {description && (
-          <p className="mt-2 font-medium text-foreground/80 whitespace-pre-wrap">
+          <div className="mt-2 font-medium text-foreground/80 whitespace-pre-wrap">
             <RichText text={description} />
-          </p>
+          </div>
         )}
         <DescriptionImages images={descriptionImages} />
         {identityNotice && (
@@ -185,9 +185,9 @@ export function FormFiller({
             </h2>
           )}
           {section.description && (
-            <p className="mt-1 font-medium text-muted-foreground whitespace-pre-wrap">
+            <div className="mt-1 font-medium text-muted-foreground whitespace-pre-wrap">
               <RichText text={section.description} />
-            </p>
+            </div>
           )}
           <DescriptionImages images={section.images} />
         </div>
@@ -219,9 +219,9 @@ export function FormFiller({
               </h3>
             )}
             {block.body && (
-              <p className="mt-1 font-medium text-muted-foreground whitespace-pre-wrap">
+              <div className="mt-1 font-medium text-muted-foreground whitespace-pre-wrap">
                 <RichText text={block.body} />
-              </p>
+              </div>
             )}
             <DescriptionImages images={block.images} />
           </div>

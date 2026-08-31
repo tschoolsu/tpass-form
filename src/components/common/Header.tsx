@@ -17,7 +17,7 @@ export function Header({ isLoggedIn, userEmail, loginUrl, logoutUrl, portalUrl, 
   return (
     <header className="sticky top-0 z-50 h-16 bg-background/90 backdrop-blur-md border-b-2 border-foreground/20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-3">
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex items-center gap-3">
           <PortalLink href={portalUrl} />
           <Link
             href="/"

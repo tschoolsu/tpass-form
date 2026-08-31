@@ -200,7 +200,7 @@ export function QuizFiller({
   const progress = ((step + 1) / questions.length) * 100;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 wrap-anywhere">
       {scene && !reduced && <Scene key={burstKey} scene={scene} />}
 
       {/* 抬頭 */}
@@ -214,9 +214,9 @@ export function QuizFiller({
           <RichText text={title} />
         </h1>
         {description && (
-          <p className="mt-2 font-medium text-foreground/80 whitespace-pre-wrap">
+          <div className="mt-2 font-medium text-foreground/80 whitespace-pre-wrap">
             <RichText text={description} />
-          </p>
+          </div>
         )}
         {identityNotice && (
           <p className="mt-3 inline-block rounded-md border-2 border-foreground bg-card px-2 py-1 font-mono text-[11px] font-bold">
@@ -255,9 +255,9 @@ export function QuizFiller({
           <RichText text={q.title} />
         </h2>
         {q.description && (
-          <p className="mt-1 font-medium text-muted-foreground whitespace-pre-wrap">
+          <div className="mt-1 font-medium text-muted-foreground whitespace-pre-wrap">
             <RichText text={q.description} />
-          </p>
+          </div>
         )}
 
         <div role="radiogroup" aria-label={q.title} className="mt-4 flex flex-col gap-2.5">
