@@ -33,6 +33,10 @@ interface Props {
   initialAnswers?: AnswerMap | null;
   initialHistory?: string[] | null;
   draftSavedAt?: string | null;
+  // edit = 正在修改已送出的回覆：預填舊答案、不存草稿、按鈕與完成文案不同。
+  mode?: "new" | "edit";
+  // 編輯模式下，原回覆的送出時間（ISO），顯示在說明列。
+  editingSubmittedAt?: string | null;
 }
 
 const TONE_BG: Record<Tone, string> = {
@@ -55,6 +59,8 @@ export function FormFiller({
   initialAnswers = null,
   initialHistory = null,
   draftSavedAt = null,
+  mode = "new",
+  editingSubmittedAt = null,
 }: Props) {
   const sections = React.useMemo(() => getSections(definition), [definition]);
   const byId = React.useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections]);
@@ -75,7 +81,8 @@ export function FormFiller({
   const nextTarget = resolveNextSection(section, sections, answers);
   const isLast = nextTarget === "END";
 
-  const draft = useDraftAutosave(slug, answers, history, draftSavedAt);
+  const editing = mode === "edit";
+  const draft = useDraftAutosave(slug, answers, history, draftSavedAt, mode === "new");
 
   const setAnswer = (qid: string, value: unknown) => {
     setAnswers((a) => ({ ...a, [qid]: value }));
@@ -138,8 +145,12 @@ export function FormFiller({
     return (
       <div className="rounded-2xl border-2 border-foreground bg-card p-10 text-center shadow-[4px_4px_0_0_var(--color-foreground)]">
         <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
-        <h2 className="mt-4 font-extrabold text-2xl">已送出，謝謝你！</h2>
-        <p className="mt-2 font-medium text-muted-foreground">你的回覆已經收到。</p>
+        <h2 className="mt-4 font-extrabold text-2xl">
+          {editing ? "已更新，謝謝你！" : "已送出，謝謝你！"}
+        </h2>
+        <p className="mt-2 font-medium text-muted-foreground">
+          {editing ? "你的修改已經收到。" : "你的回覆已經收到。"}
+        </p>
       </div>
     );
   }
@@ -168,6 +179,14 @@ export function FormFiller({
           </p>
         )}
       </div>
+
+      {editing && (
+        <p className="rounded-xl border-2 border-foreground bg-tone-orange-badge px-3 py-2 font-mono text-[11px] font-bold">
+          你正在修改{" "}
+          {editingSubmittedAt ? new Date(editingSubmittedAt).toLocaleString("zh-TW") : "先前"}
+          {" "}送出的回覆，按「更新回覆」才會生效
+        </p>
+      )}
 
       {draft.restored && (
         <p className="rounded-xl border-2 border-foreground bg-tone-green-badge px-3 py-2 font-mono text-[11px] font-bold">
@@ -234,12 +253,14 @@ export function FormFiller({
         </p>
       )}
 
-      <DraftBar
-        saveState={draft.saveState}
-        savedAt={draft.savedAt}
-        disabled={submitting}
-        onDiscard={() => void discard()}
-      />
+      {!editing && (
+        <DraftBar
+          saveState={draft.saveState}
+          savedAt={draft.savedAt}
+          disabled={submitting}
+          onDiscard={() => void discard()}
+        />
+      )}
 
       {/* 導覽 */}
       <div className="flex items-center justify-between gap-3">
@@ -259,7 +280,8 @@ export function FormFiller({
         >
           {isLast ? (
             <>
-              <Send className="h-4 w-4" /> {submitting ? "送出中…" : "送出"}
+              <Send className="h-4 w-4" />{" "}
+              {submitting ? (editing ? "更新中…" : "送出中…") : editing ? "更新回覆" : "送出"}
             </>
           ) : (
             <>

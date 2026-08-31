@@ -27,6 +27,7 @@ export function useDraftAutosave(
   answers: AnswerMap,
   history: string[],
   draftSavedAt: string | null,
+  enabled: boolean = true,
 ): DraftAutosave {
   const [saveState, setSaveState] = React.useState<SaveState>(
     draftSavedAt ? "saved" : "unsaved",
@@ -45,7 +46,7 @@ export function useDraftAutosave(
   }, []);
 
   const flush = React.useCallback(async () => {
-    if (doneRef.current) return;
+    if (doneRef.current || !enabled) return;
     setSaveState("saving");
     try {
       const res = await saveDraftAction(slug, stateRef.current);
@@ -59,7 +60,7 @@ export function useDraftAutosave(
     } catch {
       if (!doneRef.current) setSaveState("error");
     }
-  }, [slug]);
+  }, [slug, enabled]);
 
   const firstRender = React.useRef(true);
   const lastHistory = React.useRef(history);
@@ -69,7 +70,7 @@ export function useDraftAutosave(
       lastHistory.current = history;
       return;
     }
-    if (doneRef.current) return;
+    if (doneRef.current || !enabled) return;
     setRestored(false); // 使用者一動，「已還原」提示就功成身退
     setSaveState("unsaved");
     // 換頁是「使用者可能就此離開」的時刻，不等 debounce。
@@ -79,7 +80,7 @@ export function useDraftAutosave(
       void flush();
     }, delay);
     return () => clearTimeout(t);
-  }, [answers, history, flush]);
+  }, [answers, history, flush, enabled]);
 
   const discard = React.useCallback(async () => {
     await discardDraftAction(slug);
