@@ -165,6 +165,8 @@ export const formSettingsSchema = z.object({
   images: imagesField(), // 問卷標題下那段說明的插圖
   acceptingResponses: z.boolean().default(true),
   oneResponsePerUser: z.boolean().default(false),
+  // 填過的人可以回來改自己那一筆（只在 oneResponsePerUser 時有意義；建構端會連動關掉）。
+  allowEditAfterSubmit: z.boolean().default(false),
   // 收到新回覆時要通知哪些 webhook（目標在 /admin/webhooks 登記，這裡只存 id）。
   // 空陣列＝不通知，這是預設——大量回覆的問卷開了只會洗版。
   // 存 id 不存關聯：webhook 被刪掉時這裡會留下孤兒 id，讀取端一律以現存的 webhook 為準

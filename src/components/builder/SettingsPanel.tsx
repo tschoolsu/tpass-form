@@ -132,8 +132,31 @@ export function SettingsPanel({ formId, settings, onChange, webhooks }: Props) {
         </div>
         <Switch
           checked={settings.oneResponsePerUser}
-          onChange={(v) => set({ oneResponsePerUser: v })}
+          // 關掉限一次就沒有「唯一的那一筆」可改，允許修改一併關掉，不留無效組合。
+          onChange={(v) =>
+            set(v ? { oneResponsePerUser: true } : { oneResponsePerUser: false, allowEditAfterSubmit: false })
+          }
           label="每人限填一次"
+        />
+      </div>
+
+      {/* 送出後可修改：只在限一次時可操作 */}
+      <div
+        className={cn(
+          "flex items-start justify-between gap-3 pt-3",
+          !settings.oneResponsePerUser && "opacity-50",
+        )}
+      >
+        <div>
+          <Label>送出後可修改</Label>
+          <p className="mt-1 text-xs font-medium text-muted-foreground">
+            填過的人回到問卷連結可以改自己的回覆，改完會再通知一次。需先開「每人限填一次」。
+          </p>
+        </div>
+        <Switch
+          checked={settings.allowEditAfterSubmit}
+          onChange={(v) => settings.oneResponsePerUser && set({ allowEditAfterSubmit: v })}
+          label="送出後可修改"
         />
       </div>
 
