@@ -85,8 +85,12 @@ export async function submitFormAction(
       where: { id: existing.id },
       data: { answers: answers as Prisma.InputJsonValue, editedAt: now },
     });
-    // 不再被引用的附件回收，別留孤兒檔。
-    await deleteUploads(form.id, removedUploadIds(existing.answers, answers));
+    // 不再被引用的附件回收；best-effort——回覆已落地，回收失敗頂多留孤兒檔，不能讓使用者看到「送出失敗」。
+    try {
+      await deleteUploads(form.id, removedUploadIds(existing.answers, answers));
+    } catch (e) {
+      console.error("[submit] 回收附件失敗", e);
+    }
     updated = true;
   } else {
     try {
