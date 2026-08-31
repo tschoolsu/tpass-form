@@ -4,11 +4,12 @@ import { IdentityBar } from "@/components/common/IdentityBar";
 import { FormFiller } from "@/components/fill/FormFiller";
 import { QuizFiller } from "@/components/quiz/QuizFiller";
 import { tpass, authConfig, loginUrlFor } from "@/config/auth";
-import { getPublicForm, hasSubmitted } from "@/lib/forms";
+import { getPublicForm, findOwnResponse } from "@/lib/forms";
 import { isAdmin } from "@/config/admin";
 import { hasQuizSkin } from "@/lib/quiz/skins";
 import { getDraft } from "@/lib/response-draft";
 import { IDENTITY_FIELD_LABELS } from "@/lib/survey-schema";
+import type { AnswerMap } from "@/lib/answers";
 
 function Shell({
   children,
@@ -95,11 +96,15 @@ export default async function FillPage({
     );
   }
 
-  // 只能填一次的問卷：填過就不再交出填寫器。原本唯一的攔截是送出時撞 DB unique 約束，
-  // 使用者得整份重填完才被擋 —— 體感就是「可以重複填答」。
+  // 只能填一次的問卷：填過的人分兩路——問卷允許修改就交出預填的填寫器（編輯模式）；
+  // 否則攔在這裡。原本唯一的攔截是送出時撞 DB unique 約束，使用者得整份重填完才被擋。
   // 「填過了」是綁在**這個帳號**上的判斷，而本服務的帳號不一定是使用者以為的那個
   // （契約 v2 的 cookie 不跟著 portal 換帳號走），所以一定要把帳號印出來並給切換入口。
-  if (await hasSubmitted(form, session.sub)) {
+  const own = await findOwnResponse(form, session.sub);
+  // editing 是「要拿去預填的那筆」；用物件而不是 boolean 當旗標，TS 才能在 JSX 裡縮窄型別。
+  const editing =
+    own !== null && form.settings.allowEditAfterSubmit && !hasQuizSkin(slug) ? own : null;
+  if (own && !editing) {
     return (
       <Shell isLoggedIn admin={admin} userEmail={session.email}>
         <IdentityBar email={session.email} returnPath={`/f/${slug}`} />
@@ -152,9 +157,11 @@ export default async function FillPage({
         definition={form.definition}
         tone={form.settings.theme.tone}
         identityNotice={identityNotice}
-        initialAnswers={draft?.answers ?? null}
-        initialHistory={draft?.history ?? null}
-        draftSavedAt={draft?.updatedAt.toISOString() ?? null}
+        mode={editing ? "edit" : "new"}
+        editingSubmittedAt={editing?.submittedAt.toISOString() ?? null}
+        initialAnswers={editing ? (editing.answers as AnswerMap) : (draft?.answers ?? null)}
+        initialHistory={editing ? null : (draft?.history ?? null)}
+        draftSavedAt={editing ? null : (draft?.updatedAt.toISOString() ?? null)}
       />
     </Shell>
   );
