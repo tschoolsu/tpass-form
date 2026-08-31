@@ -8,7 +8,7 @@ import { anonKeyFor } from "@/lib/anon-key";
 import { deleteObject } from "@/lib/storage";
 import { gcFormAssets, purgeFormAssets } from "@/lib/form-assets";
 import type { ResponseRecord } from "@/lib/response-stats";
-import type { UploadedFile } from "@/components/fill/QuestionRenderer";
+import { collectUploadIds } from "@/lib/upload-refs";
 import {
   formDefinitionSchema,
   formSettingsSchema,
@@ -253,18 +253,6 @@ export async function deleteResponse(formId: string, responseId: string): Promis
       console.error("[forms] deleteObject failed", u.storageKey, e);
     }
   }
-}
-
-// 從 answers 掃出所有檔案題的 upload id（值形狀 = UploadedFile[]）。
-export function collectUploadIds(answers: unknown): string[] {
-  const ids: string[] = [];
-  for (const value of Object.values((answers as Record<string, unknown>) ?? {})) {
-    if (!Array.isArray(value)) continue;
-    for (const f of value as UploadedFile[]) {
-      if (f && typeof f.id === "string") ids.push(f.id);
-    }
-  }
-  return ids;
 }
 
 export async function deleteForm(id: string): Promise<void> {

@@ -5,7 +5,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { deleteObject } from "@/lib/storage";
 import { anonKeyFor } from "@/lib/anon-key";
-import { collectUploadIds } from "@/lib/forms";
+import { collectUploadIds } from "@/lib/upload-refs";
 import type { AnswerMap } from "@/lib/answers";
 import { type FormDefinition, START_SECTION_ID } from "@/lib/survey-schema";
 
