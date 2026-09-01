@@ -155,7 +155,8 @@ export function SettingsPanel({ formId, settings, onChange, webhooks }: Props) {
         </div>
         <Switch
           checked={settings.allowEditAfterSubmit}
-          onChange={(v) => settings.oneResponsePerUser && set({ allowEditAfterSubmit: v })}
+          disabled={!settings.oneResponsePerUser}
+          onChange={(v) => set({ allowEditAfterSubmit: v })}
           label="送出後可修改"
         />
       </div>
