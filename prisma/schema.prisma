@@ -1,12 +1,12 @@
 // tpass-form 資料模型。表單本體用 JSONB document 存定義（題型多變、要好版本控管，
 // 正規化成一堆題目表是自找麻煩）。真相來源是這個 Postgres；Google Sheet 只做匯出鏡像。
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // 學生會 email 白名單（超管種子來自 env，不入此表）。

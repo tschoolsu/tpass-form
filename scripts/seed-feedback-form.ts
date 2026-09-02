@@ -7,7 +7,8 @@
 import { readFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { loadEnvConfig } from "@next/env";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "../src/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import {
   buildFeedbackDefinition,
   FEEDBACK_DESCRIPTION,
@@ -20,7 +21,7 @@ import {
 // 腳本不經 Next 路由，process.env 不會自動載入 .env.local；明確載入。
 loadEnvConfig(process.cwd());
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 interface RegistryService {
   id: string;

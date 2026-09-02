@@ -1,6 +1,6 @@
 # This is NOT the Next.js you know
 
-本專案用 **Next 16.2.9 + React 19**，且啟用 React Compiler。API、慣例、檔案結構都可能與你的訓練資料不同。
+本專案用 **Next 16.3 + React 19**，且啟用 React Compiler。API、慣例、檔案結構都可能與你的訓練資料不同。
 寫任何 Next code 前先讀 `node_modules/next/dist/docs/` 對應指南，留意 deprecation。
 
 重點差異提醒：
@@ -24,5 +24,5 @@ T-Form 是 T-Pass SSO 的**消費端**問卷服務。動手前先讀 `README.md`
 `services.json` 註冊表、`tpass` CLI 與部署流程，都在上層 **tpass-ops** repo 的
 `AGENTS.md` 與 `docs/`。動跨服務的東西前先讀那邊。
 
-- 憑證放 `$HOME/tpass-certs`（`tpass setup` 會 symlink 過去；沒有 ops repo 就自己 mkcert，見 NEW-SERVICE §4.1）。
+- 憑證放 `$HOME/tpass-certs`（`tpass setup` 會 symlink 過去；沒有 ops repo 就自己 mkcert，見 tpass-ops `docs/handbook/01-new-service.md`〈建立本機憑證〉）。
 - SSO 串接合約（契約 v2）：`../tpass-auth/INTEGRATION.md`（權威）。

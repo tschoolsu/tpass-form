@@ -7,7 +7,8 @@
 // 用相對路徑 import（不靠 tsconfig paths），且那個檔對 survey-schema 只有 type-only import，
 // 執行期不需要解析 @/ 別名。
 import { loadEnvConfig } from "@next/env";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "../src/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import {
   QUIZ_DEFINITION,
   QUIZ_DESCRIPTION,
@@ -19,7 +20,7 @@ import {
 // 腳本不經 Next 路由，process.env 不會自動載入 .env.local；明確載入。
 loadEnvConfig(process.cwd());
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 async function main() {
   const ownerSub = process.env.QUIZ_OWNER_SUB?.trim();

@@ -23,7 +23,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed:quiz": "pnpm dlx tsx scripts/seed-freshman-quiz.ts",
-    "db:seed:feedback": "pnpm dlx tsx scripts/seed-feedback-form.ts"
+    "db:seed:feedback": "pnpm dlx tsx scripts/seed-feedback-form.ts",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"
@@ -33,11 +34,13 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@next/env": "16.2.9",
-    "@prisma/client": "^6.2.1",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
     "jose": "^6.2.3",
     "lucide-react": "^1.18.0",
     "nanoid": "^5.0.9",
     "next": "16.3.3",
+    "pg": "^8.23.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.54.2",
@@ -49,12 +52,14 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
-    "prisma": "^6.2.1",
+    "prisma": "^7.10.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11"

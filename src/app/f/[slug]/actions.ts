@@ -3,7 +3,7 @@
 // 填寫端的 server actions（送出 / 草稿）。身分一律由伺服器從驗章後的 session 戳記，
 // client 傳的身分與草稿擁有者一概不信。
 import { after } from "next/server";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { requireSession } from "@/lib/guard";
 import { authConfig } from "@/config/auth";
 import { notifyResponse } from "@/lib/webhooks";

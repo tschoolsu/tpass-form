@@ -1,7 +1,7 @@
 // 填寫進度草稿（自動儲存）的唯一資料存取層。
 // 草稿只有本人一個寫入者，所以不需要像表單建構器那樣的樂觀鎖。
 import "server-only";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { deleteObject } from "@/lib/storage";
 import { anonKeyFor } from "@/lib/anon-key";

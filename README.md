@@ -5,7 +5,7 @@ TSchool 數位服務平台的問卷子模組（消費端）。對標 Google 表�
 不回呼 auth、不碰私鑰。
 
 - 子網域（本機）：`https://form.lvh.me:3002`（tpass-auth:3000 / tpass-portal:3001 之後）
-- 技術棧：Next 16.2.9 + React 19 + Tailwind v4 + jose + Prisma(Postgres) + @dnd-kit + react-hook-form/zod
+- 技術棧：Next 16.3 + React 19 + Tailwind v4 + tpass-auth-js + Prisma 7 (Postgres) + @dnd-kit + react-hook-form/zod
 
 ## 功能
 
@@ -33,8 +33,7 @@ TSchool 數位服務平台的問卷子模組（消費端）。對標 Google 表�
 
 2. **資料庫建表**：
    ```bash
-   pnpm exec prisma db push      # 依 schema 直接建表（最快，無 migration history）
-   # 或 pnpm exec prisma migrate dev --name init
+   pnpm exec prisma migrate dev  # 套用 prisma/migrations；改 schema 後也用它產新 migration（不要 db push）
    ```
 
 3. **HTTPS 憑證**（與 tpass-auth / tpass-portal 共用 mkcert）：
@@ -60,7 +59,8 @@ pnpm exec tsc --noEmit
 
 ## 架構備忘
 
-- 驗章四鐵則在 `src/lib/tpass-auth.ts`（照抄 tpass-portal 參考實作）：`algorithms:['EdDSA']` / issuer / audience / exp。
+- 驗章走共用套件 `tpass-auth-js`（`src/config/auth.ts` 綁 env、callback／logout route 各一行），不要在這裡手抄驗章。
+- 資料庫走 Prisma 7 + `@prisma/adapter-pg`（`src/lib/db.ts`），schema 改動只透過 `prisma migrate dev` 產 migration；準則見 tpass-ops `docs/handbook/01-new-service.md`〈資料庫〉。
 - **登出留在本服務**：`src/config/auth.ts` 的 `logoutUrl` 夾帶 `redirect_uri=<自己>`，讓 auth 登出後
   `303` 導回 T-Form 首頁而不是 auth 自己的頁面（契約見 `tpass-auth/INTEGRATION.md` §7.2）。
   首頁 (`src/app/page.tsx`) 讀網址上的 `logout=1` 顯示「您已登出」文案；這個參數**只是畫面提示**，

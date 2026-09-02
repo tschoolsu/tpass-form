@@ -2,7 +2,7 @@
 // 讀寫都過 zod，套用預設並擋掉壞資料。
 import "server-only";
 import { customAlphabet } from "nanoid";
-import type { Form } from "@prisma/client";
+import type { Form } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { anonKeyFor } from "@/lib/anon-key";
 import { deleteObject } from "@/lib/storage";
